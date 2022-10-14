@@ -1,0 +1,12 @@
+<!DOCTYPE html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><meta charset="UTF-8"><title>simpleperf_notes | TheFuture1sNow</title><link rel="stylesheet" href="/css/style.css"><link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/github.min.css">
+<link href="https://fonts.googleapis.com/css?family=Amatic+SC|Lato|Source+Sans+Pro&display=swap" rel="stylesheet"><meta name="generator" content="Hexo 6.3.0"></head><body><div id="layout-page"><nav id="layout-menu"><div class="other-page hide"><a href="/about">About</a><a href="/archives">Archives</a></div><div class="responsive-pad"></div><div id="mega-head"><a href="/">TheFuture1sNow</a></div><div class="responsive-bar" onclick="toggle(this)">≡</div></nav><div id="content"><article id="post"><h1>simpleperf_notes</h1><time class="created-date" datetime="2022-10-14T06:33:13.000Z">2022-10-14</time><h2 id="SimplePerf-Notes"><a href="#SimplePerf-Notes" class="headerlink" title="SimplePerf Notes"></a>SimplePerf Notes</h2><p>这个博客是在学习使用SimplePerf来监视测试机在运行测试程序时的访存请求总数以及缓存缺失数时所记录的笔记。</p>
+<p>需要使用测试机的实测结果来验证缓存仿真器的仿真结果。这个博客将会记录SimplePerf的基本用法以及一些底层的原理。</p>
+<p>在将SimplePerf的统计结果与缓存仿真器的仿真结果进行比对已验证缓存仿真器的可靠性之前，需要验证一点，或者说必须确保的是，也就是SimplePerf的结果确实是实测所得的结果，体现在下面几个方面：</p>
+<ul>
+<li>SimplePerf工具本身是没有问题的？</li>
+<li>SimplePerf的用法是没有问题的？</li>
+<li>SimplePerf的结果统计分析过程是没有问题的？也就是对SimplePerf的输出结果的解释是准确的？</li>
+</ul>
+<p>这个博客所记录的问题就是为了确保上面几点是能够成立的。</p>
+<h3 id="PMU"><a href="#PMU" class="headerlink" title="PMU"></a>PMU</h3></article><div id="paginator"></div></div><footer id="bottom"><span>© </span><span>2hYan9</span><span>. Powered By </span><a target="_blank" rel="noopener" href="http://hexo.io"><span>HEXO</span></a><span>. Theme </span><a target="_blank" rel="noopener" href="https://github.com/lixuetaoleo/hexo-theme-leo">leo</a></footer></div><script src="/js/style.js"></script><script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script></body></html>
