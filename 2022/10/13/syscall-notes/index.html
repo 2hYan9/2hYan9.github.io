@@ -16,22 +16,22 @@
   <meta name="author" content="2hYan9">
   <meta name="keywords" content="some notes">
   
-    <meta name="description" content="GNU Hash notes Linux系统中，在ELF文件的全局偏移表(Global Offset Table, GOT)中的第1个条目用于存放该文件动态段(DT_DYNAMIC)的地址，第2个条目用于存放link_map的地址，第3个条目用于存放链接器(ld.so)的地址，准确的说应该是动态链接器_dl_runtime_resolve()函数的地址。 在进行动态库注入实验时，要使用dlopen">
+    <meta name="description" content="Syscall Notes 在计算机中，系统调用是一种编程方式，计算机程序通过该方式向操作系统的内核请求服务。系统调用是一种计算机程序与操作系统互动的方式：计算机程序通过系统调用向操作系统内核请求服务，而系统调用则会通过API(Application Program Interface)向用户程序提供操作系统的服务。 系统调用提供了进程和操作系统之间的接口，以允许用户级进程请求操作系统的服务。系统">
 <meta property="og:type" content="article">
-<meta property="og:title" content="gnu hash notes">
-<meta property="og:url" content="https://2hyan9.github.io/2022/10/17/gnu-hash-notes/gnu-hash-notes/index.html">
+<meta property="og:title" content="syscall_notes">
+<meta property="og:url" content="https://2hyan9.github.io/2022/10/13/syscall-notes/index.html">
 <meta property="og:site_name" content="TheFuture1sNow">
-<meta property="og:description" content="GNU Hash notes Linux系统中，在ELF文件的全局偏移表(Global Offset Table, GOT)中的第1个条目用于存放该文件动态段(DT_DYNAMIC)的地址，第2个条目用于存放link_map的地址，第3个条目用于存放链接器(ld.so)的地址，准确的说应该是动态链接器_dl_runtime_resolve()函数的地址。 在进行动态库注入实验时，要使用dlopen">
+<meta property="og:description" content="Syscall Notes 在计算机中，系统调用是一种编程方式，计算机程序通过该方式向操作系统的内核请求服务。系统调用是一种计算机程序与操作系统互动的方式：计算机程序通过系统调用向操作系统内核请求服务，而系统调用则会通过API(Application Program Interface)向用户程序提供操作系统的服务。 系统调用提供了进程和操作系统之间的接口，以允许用户级进程请求操作系统的服务。系统">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2022-10-17T12:03:23.000Z">
-<meta property="article:modified_time" content="2022-10-18T12:26:41.029Z">
+<meta property="article:published_time" content="2022-10-13T07:44:31.000Z">
+<meta property="article:modified_time" content="2022-10-18T12:28:31.445Z">
 <meta property="article:author" content="2hYan9">
-<meta property="article:tag" content="binary analysi">
+<meta property="article:tag" content="binary analysis">
 <meta name="twitter:card" content="summary_large_image">
   
   
   
-  <title>gnu hash notes - TheFuture1sNow</title>
+  <title>syscall_notes - TheFuture1sNow</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -69,7 +69,7 @@
   <script id="fluid-configs">
     var Fluid = window.Fluid || {};
     Fluid.ctx = Object.assign({}, Fluid.ctx)
-    var CONFIG = {"hostname":"2hyan9.github.io","root":"/","version":"1.9.3","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+    var CONFIG = {"hostname":"2hyan9.github.io","root":"/","version":"1.9.3","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"left","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
 
     if (CONFIG.web_analytics.follow_dnt) {
       var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
@@ -196,7 +196,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="gnu hash notes"></span>
+            <span id="subtitle" data-typed-text="syscall_notes"></span>
           
         </div>
 
@@ -207,8 +207,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2022-10-17 20:03" pubdate>
-          2022年10月17日 晚上
+        <time datetime="2022-10-13 15:44" pubdate>
+          2022年10月13日 下午
         </time>
       </span>
     
@@ -219,7 +219,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          1.3k 字
+          1.4k 字
         
       </span>
     
@@ -230,7 +230,7 @@
         
         
         
-          11 分钟
+          12 分钟
         
       </span>
     
@@ -260,6 +260,16 @@
   <div class="row nomargin-x">
     <div class="side-col d-none d-lg-block col-lg-2">
       
+  <aside class="sidebar" style="padding-left: 2rem; margin-right: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
 
     </div>
 
@@ -268,26 +278,45 @@
         <div id="board">
           <article class="post-content mx-auto">
             <!-- SEO header -->
-            <h1 style="display: none">gnu hash notes</h1>
+            <h1 style="display: none">syscall_notes</h1>
             
             
               <div class="markdown-body">
                 
-                <h2 id="GNU-Hash-notes">GNU Hash notes</h2>
-<p>Linux系统中，在ELF文件的全局偏移表(Global Offset Table, GOT)中的第1个条目用于存放该文件动态段(DT_DYNAMIC)的地址，第2个条目用于存放link_map的地址，第3个条目用于存放链接器(<a target="_blank" rel="noopener" href="http://ld.so">ld.so</a>)的地址，准确的说应该是动态链接器_dl_runtime_resolve()函数的地址。</p>
-<p>在进行动态库注入实验时，要使用dlopen()函数在运行时加载一个共享目标，但是一般的宿主程序中都没有调用dlopen()函数，因此也就没有链接libdl共享库，所以无法直接使用dlopen()函数，但是可以使用位于 <a target="_blank" rel="noopener" href="http://libc.so">libc.so</a> 中的__libc_dlopen_mode() 函数，该函数的使用方法和dlopen()函数基本是一致的。所以现在的问题是需要得到位于 <a target="_blank" rel="noopener" href="http://libc.so">libc.so</a> 中的 __libc_dlopen_mode() 函数的地址。</p>
-<p>通常有两种方法得到该函数的地址。</p>
-<p>第一种方法是直接读取进程中 <a target="_blank" rel="noopener" href="http://libc.so">libc.so</a> 对应的地址空间中的内容，然后可以发现这些内容可以使用ELF的格式进行解析。那么就可以找到 <a target="_blank" rel="noopener" href="http://libc.so">libc.so</a> 位于进程中的ELF文件头、程序头表，进而得到 <a target="_blank" rel="noopener" href="http://libc.so">libc.so</a> 的动态段的地址，然后得到动态符号表(.dynsym)、动态字符表(.dynstr)，然后查询符号表获得__libc_dlopen_mode() 函数的地址。</p>
-<p>这种比较容易实现，但是在有些 libc 版本中能够实现，但是在有些 libc 版本中却无法搜索到 __libc_dlopen_mode() 这个符号。</p>
-<p>所以通常会采用另一种更加可靠的方法，使用link_map进行查找，而具体的符号查找方法需要使用到GNU hash相关的知识，这篇文章将会介绍如何使用GNU hash进行符号查找。</p>
-<p>ref. <a target="_blank" rel="noopener" href="https://blogs.oracle.com/solaris/post/gnu-hash-elf-sections">GNU Hash ELF Sections</a></p>
-<h4 id="Hash-function">Hash function</h4>
-<p>GNU hash函数使用的是 DJB(Daniel J Bernstein) 哈希算法，算法的代码如下：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-type">uint32_t</span><br><span class="hljs-title function_">dl_new_hash</span> <span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span> *s)</span><br>&#123;<br>	<span class="hljs-type">uint32_t</span> h = <span class="hljs-number">5381</span>;<br><br>	<span class="hljs-keyword">for</span> (<span class="hljs-type">unsigned</span> <span class="hljs-type">char</span> c = *s; c != <span class="hljs-string">&#x27;\0&#x27;</span>; c = *++s)<br>		h = h * <span class="hljs-number">33</span> + c; <span class="hljs-comment">// or h = ((h &lt;&lt; 5) + h) + c;</span><br><br>	<span class="hljs-keyword">return</span> h;<br>&#125;<br></code></pre></td></tr></table></figure>
-<p>上面的代码将接受一个字符串作为参数，然后计算该字符串的DJB哈希值。</p>
-<figure class="highlight abnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs abnf"><br>printf(<span class="hljs-string">&quot;hello world!\n&quot;</span>)<span class="hljs-comment">;</span><br><br></code></pre></td></tr></table></figure>
-<p>使用GNU hash，动态符号表将会被划分为两个不同的部分，第一部分是能够从hash表中省略的符号，GNU hash并不会对这一部分施加特定的顺序；第二部分就是能够通过 GNU hash查找到的符号，对于这部分符号，GNU hash将会按照 (hash % nbuckets) 值递增排序，hash值使用上面的方法进行计算，而nbuckets就是哈希桶的数量，哈希桶的数量在GNU hash节中保存。因此位于同一个哈希链中的符号在内存中也是邻接的，提高了空间局部性。</p>
-<h3 id="GNU-hash-节">GNU hash 节</h3>
+                <h2 id="Syscall-Notes">Syscall Notes</h2>
+<p>在计算机中，系统调用是一种编程方式，计算机程序通过该方式向操作系统的内核请求服务。系统调用是一种计算机程序与操作系统互动的方式：计算机程序通过系统调用向操作系统内核请求服务，而系统调用则会通过API(Application Program Interface)向用户程序提供操作系统的服务。</p>
+<p>系统调用提供了进程和操作系统之间的接口，以允许用户级进程请求操作系统的服务。系统调用是内核系统的唯一入口点， 所有需要资源的程序都必须通过系统调用获取相应资源。</p>
+<h3 id="关于中断">关于中断</h3>
+<p><em>任何一种通用的CPU都必须具备一种能力，即可以在执行完当前正在执行的指令之后，检测到从CPU外部发送过来的或内部产生的一种特殊信息，并且可以立即对所接收到的信息进行处理</em>。</p>
+<p>这种特殊的信息就是所谓的中断(Interrupt, sometimes refered to as trap)信息，<u>中断信息会使CPU不再继续从刚执行完的指令向下执行，而是转而去处理这个特殊的信息</u>。中断信息会要求CPU马上进行某种处理，并向所要进行的该种处理提供了必备的参数的通知信息。</p>
+<p>中断信息可以来自CPU的内部或者外部，来自CPU内部的中断信息通常被称为<strong>内中断</strong>，来自CPU外部（外设，比如键盘）的中断信息通常被称为<strong>外中断</strong>，这里主要介绍内中断。</p>
+<h4 id="内中断的产生">内中断的产生</h4>
+<p>CPU一般会在下面几种情况下产生内中断：</p>
+<ol>
+<li>除法错误</li>
+<li>单步执行</li>
+<li>执行into指令</li>
+<li>执行int指令</li>
+</ol>
+<p>在讨论各种中断的具体含义之前，需要先了解中断信息是如何让CPU区分不同的类型的中断信息的。</p>
+<p>CPU首先需要知道的是所接收到的中断信息的来源，即中断源，因此中断信息中必须包含识别来源的编码。一般使用中断类型码来标识中断信息的来源。</p>
+<p>比如在8086CPU中，上面中断来源在中断类型码为：除法错误：0；单步执行：1；执行into指令：4；执行int指令，int指令的格式为 int n，其中n为一个立即数，就是提供给CPU的中断类型码。</p>
+<h4 id="中断向量表">中断向量表</h4>
+<p>除了中断源，CPU还需要知道如何处理中断，而这由中断处理程序决定，也就是让CPU接收到中断信息后转而去执行该中断信息对应的中断处理程序。</p>
+<p>因此CPU需要某种方式获取到对应中断处理程序的入口地址。而<u>中断向量表就是为了让CPU知道各种中断处理程序的入口地址</u>。所谓<strong>中断向量其实就是中断处理程序的入口地址，中断向量表中存储了各类中断信息所对应的中断向量</strong>。</p>
+<p>中断向量表通常位于内存中的某个预定的位置，比如在8086CPU中，中断向量表指定放在内存地址0处，从内存0000:0000到0000:03FF 的1024个单元中存放这中断向量表。</p>
+<p>所以，CPU在接收到中断信息后，会根据中断类型码找到该中断的中断向量，并设置程序计数器到该中断向量，从而处理该中断。</p>
+<h4 id="中断过程">中断过程</h4>
+<p>在CPU执行完中断处理程序后，需要返回到原来的地址继续执行，所以在中断过程中设置程序计数器之前，还需要将程序计数器原来的值保存起来。</p>
+<p>比如在8086CPU中，CPU收到中断信息后，所引发的中断过程如下：</p>
+<ol>
+<li>从中断信息中读取中断类型码</li>
+<li>将标志寄存器入栈，因为下一步就要修改标志寄存器的值，所以这里需要先保存原来的值</li>
+<li>设置标志寄存器的第8位TF和第9位IF的值为0</li>
+<li>保存当前程序计数器的值</li>
+<li>从中断向量表中读取该类型中断对应的中断向量，并设置程序计数器的值为该中断向量</li>
+</ol>
+<p>从中断处理程序回到原来执行的地址则需要使用<code>iret</code>指令，该指令的功能用汇编语法描述为：<code>pop PC; pop flag</code>，也就是恢复程序计数器，然后恢复标志寄存器原来的值。</p>
 
                 
               </div>
@@ -321,7 +350,7 @@
     <div class="post-meta">
       <i class="iconfont icon-tags"></i>
       
-        <a href="/tags/binary-analysi/">#binary analysi</a>
+        <a href="/tags/binary-analysis/">#binary analysis</a>
       
     </div>
   
@@ -333,8 +362,8 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>gnu hash notes</div>
-      <div>https://2hyan9.github.io/2022/10/17/gnu-hash-notes/gnu-hash-notes/</div>
+      <div>syscall_notes</div>
+      <div>https://2hyan9.github.io/2022/10/13/syscall-notes/</div>
     </div>
     <div class="license-meta">
       
@@ -346,7 +375,7 @@
       
         <div class="license-meta-item license-meta-date">
           <div>发布于</div>
-          <div>2022年10月17日</div>
+          <div>2022年10月13日</div>
         </div>
       
       
@@ -378,12 +407,18 @@
                   <article class="post-prev col-6">
                     
                     
+                      <a href="/2022/10/14/simpleperf-notes/" title="simpleperf_notes">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">simpleperf_notes</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
                   </article>
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2022/10/14/DynamoRIO-Tutorial/DynamoRIO-Tutorial/" title="DynamoRIO Tutorial">
-                        <span class="hidden-mobile">DynamoRIO Tutorial</span>
+                      <a href="/2022/10/12/gdb-usage/" title="gdb_usage">
+                        <span class="hidden-mobile">gdb_usage</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
@@ -401,16 +436,6 @@
 
     <div class="side-col d-none d-lg-block col-lg-2">
       
-  <aside class="sidebar" style="margin-left: -1rem">
-    <div id="toc">
-  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
-  <div class="toc-body" id="toc-body"></div>
-</div>
-
-
-
-  </aside>
-
 
     </div>
   </div>

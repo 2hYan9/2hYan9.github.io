@@ -19,19 +19,19 @@
     <meta name="description" content="SimplePerf Notes 这个博客是在学习使用SimplePerf来监视测试机在运行测试程序时的访存请求总数以及缓存缺失数时所记录的笔记。 SimplePerf是一种CPU分析器(Profiler)，可以用于监测测试程序运行时的性能数据，而本人需要使用测试机的实测缓存访问结果来验证缓存仿真器的仿真结果。这个博客将会记录SimplePerf的基本用法以及一些底层的原理。 在将SimplePe">
 <meta property="og:type" content="article">
 <meta property="og:title" content="simpleperf_notes">
-<meta property="og:url" content="https://2hyan9.github.io/2022/10/14/simpleperf-notes/simpleperf-notes/index.html">
+<meta property="og:url" content="https://2hyan9.github.io/2022/10/14/simpleperf-notes/index.html">
 <meta property="og:site_name" content="TheFuture1sNow">
 <meta property="og:description" content="SimplePerf Notes 这个博客是在学习使用SimplePerf来监视测试机在运行测试程序时的访存请求总数以及缓存缺失数时所记录的笔记。 SimplePerf是一种CPU分析器(Profiler)，可以用于监测测试程序运行时的性能数据，而本人需要使用测试机的实测缓存访问结果来验证缓存仿真器的仿真结果。这个博客将会记录SimplePerf的基本用法以及一些底层的原理。 在将SimplePe">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://2hyan9.github.io/2022/10/14/simpleperf-notes/simpleperf-notes/image/how_simpleperf_works.png">
-<meta property="og:image" content="https://2hyan9.github.io/2022/10/14/simpleperf-notes/simpleperf-notes/image/simpleperf_stat.png">
-<meta property="og:image" content="https://2hyan9.github.io/2022/10/14/simpleperf-notes/simpleperf-notes/image/simpleperf_record.png">
+<meta property="og:image" content="https://2hyan9.github.io/2022/10/14/simpleperf-notes/image/how_simpleperf_works.png">
+<meta property="og:image" content="https://2hyan9.github.io/2022/10/14/simpleperf-notes/image/simpleperf_stat.png">
+<meta property="og:image" content="https://2hyan9.github.io/2022/10/14/simpleperf-notes/image/simpleperf_record.png">
 <meta property="article:published_time" content="2022-10-14T06:33:13.000Z">
 <meta property="article:modified_time" content="2022-10-18T12:28:37.689Z">
 <meta property="article:author" content="2hYan9">
 <meta property="article:tag" content="quantitative analysis">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://2hyan9.github.io/2022/10/14/simpleperf-notes/simpleperf-notes/image/how_simpleperf_works.png">
+<meta name="twitter:image" content="https://2hyan9.github.io/2022/10/14/simpleperf-notes/image/how_simpleperf_works.png">
   
   
   
@@ -73,7 +73,7 @@
   <script id="fluid-configs">
     var Fluid = window.Fluid || {};
     Fluid.ctx = Object.assign({}, Fluid.ctx)
-    var CONFIG = {"hostname":"2hyan9.github.io","root":"/","version":"1.9.3","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+    var CONFIG = {"hostname":"2hyan9.github.io","root":"/","version":"1.9.3","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"left","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
 
     if (CONFIG.web_analytics.follow_dnt) {
       var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
@@ -264,6 +264,16 @@
   <div class="row nomargin-x">
     <div class="side-col d-none d-lg-block col-lg-2">
       
+  <aside class="sidebar" style="padding-left: 2rem; margin-right: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
 
     </div>
 
@@ -422,7 +432,7 @@
   <div class="license-box my-3">
     <div class="license-title">
       <div>simpleperf_notes</div>
-      <div>https://2hyan9.github.io/2022/10/14/simpleperf-notes/simpleperf-notes/</div>
+      <div>https://2hyan9.github.io/2022/10/14/simpleperf-notes/</div>
     </div>
     <div class="license-meta">
       
@@ -466,7 +476,7 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2022/10/14/DynamoRIO-Tutorial/DynamoRIO-Tutorial/" title="DynamoRIO Tutorial">
+                      <a href="/2022/10/14/DynamoRIO-Tutorial/" title="DynamoRIO Tutorial">
                         <i class="iconfont icon-arrowleft"></i>
                         <span class="hidden-mobile">DynamoRIO Tutorial</span>
                         <span class="visible-mobile">上一篇</span>
@@ -476,7 +486,7 @@
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2022/10/13/syscall-notes/syscall-notes/" title="syscall_notes">
+                      <a href="/2022/10/13/syscall-notes/" title="syscall_notes">
                         <span class="hidden-mobile">syscall_notes</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
@@ -495,16 +505,6 @@
 
     <div class="side-col d-none d-lg-block col-lg-2">
       
-  <aside class="sidebar" style="margin-left: -1rem">
-    <div id="toc">
-  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
-  <div class="toc-body" id="toc-body"></div>
-</div>
-
-
-
-  </aside>
-
 
     </div>
   </div>
