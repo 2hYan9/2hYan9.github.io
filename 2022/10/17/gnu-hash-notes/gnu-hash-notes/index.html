@@ -16,22 +16,22 @@
   <meta name="author" content="2hYan9">
   <meta name="keywords" content="some notes">
   
-    <meta name="description" content="Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub. Quick">
+    <meta name="description" content="GNU Hash notes Linux系统中，在ELF文件的全局偏移表(Global Offset Table, GOT)中的第1个条目用于存放该文件动态段(DT_DYNAMIC)的地址，第2个条目用于存放link_map的地址，第3个条目用于存放链接器(ld.so)的地址，准确的说应该是动态链接器_dl_runtime_resolve()函数的地址。 在进行动态库注入实验时，要使用dlopen">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Hexo basic usage">
-<meta property="og:url" content="https://2hyan9.github.io/2022/10/12/hexo-basic-usage/index.html">
+<meta property="og:title" content="gnu hash notes">
+<meta property="og:url" content="https://2hyan9.github.io/2022/10/17/gnu-hash-notes/gnu-hash-notes/index.html">
 <meta property="og:site_name" content="TheFuture1sNow">
-<meta property="og:description" content="Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub. Quick">
+<meta property="og:description" content="GNU Hash notes Linux系统中，在ELF文件的全局偏移表(Global Offset Table, GOT)中的第1个条目用于存放该文件动态段(DT_DYNAMIC)的地址，第2个条目用于存放link_map的地址，第3个条目用于存放链接器(ld.so)的地址，准确的说应该是动态链接器_dl_runtime_resolve()函数的地址。 在进行动态库注入实验时，要使用dlopen">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2022-10-12T13:29:17.926Z">
-<meta property="article:modified_time" content="2022-10-14T05:51:45.132Z">
+<meta property="article:published_time" content="2022-10-17T12:03:23.000Z">
+<meta property="article:modified_time" content="2022-10-18T12:26:41.029Z">
 <meta property="article:author" content="2hYan9">
-<meta property="article:tag" content="some notes">
+<meta property="article:tag" content="binary analysi">
 <meta name="twitter:card" content="summary_large_image">
   
   
   
-  <title>Hexo basic usage - TheFuture1sNow</title>
+  <title>gnu hash notes - TheFuture1sNow</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -196,7 +196,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="Hexo basic usage"></span>
+            <span id="subtitle" data-typed-text="gnu hash notes"></span>
           
         </div>
 
@@ -207,8 +207,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2022-10-12 21:29" pubdate>
-          2022年10月12日 晚上
+        <time datetime="2022-10-17 20:03" pubdate>
+          2022年10月17日 晚上
         </time>
       </span>
     
@@ -219,7 +219,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          363 字
+          1.3k 字
         
       </span>
     
@@ -230,7 +230,7 @@
         
         
         
-          4 分钟
+          11 分钟
         
       </span>
     
@@ -268,24 +268,26 @@
         <div id="board">
           <article class="post-content mx-auto">
             <!-- SEO header -->
-            <h1 style="display: none">Hexo basic usage</h1>
+            <h1 style="display: none">gnu hash notes</h1>
             
             
               <div class="markdown-body">
                 
-                <p>Welcome to <a target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a target="_blank" rel="noopener" href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a target="_blank" rel="noopener" href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a target="_blank" rel="noopener" href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><pre><code class="bash">$ hexo new &quot;My New Post&quot;
-</code></pre>
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><pre><code class="bash">$ hexo server
-</code></pre>
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><pre><code class="bash">$ hexo generate
-</code></pre>
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><pre><code class="bash">$ hexo deploy
-</code></pre>
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+                <h2 id="GNU-Hash-notes">GNU Hash notes</h2>
+<p>Linux系统中，在ELF文件的全局偏移表(Global Offset Table, GOT)中的第1个条目用于存放该文件动态段(DT_DYNAMIC)的地址，第2个条目用于存放link_map的地址，第3个条目用于存放链接器(<a target="_blank" rel="noopener" href="http://ld.so">ld.so</a>)的地址，准确的说应该是动态链接器_dl_runtime_resolve()函数的地址。</p>
+<p>在进行动态库注入实验时，要使用dlopen()函数在运行时加载一个共享目标，但是一般的宿主程序中都没有调用dlopen()函数，因此也就没有链接libdl共享库，所以无法直接使用dlopen()函数，但是可以使用位于 <a target="_blank" rel="noopener" href="http://libc.so">libc.so</a> 中的__libc_dlopen_mode() 函数，该函数的使用方法和dlopen()函数基本是一致的。所以现在的问题是需要得到位于 <a target="_blank" rel="noopener" href="http://libc.so">libc.so</a> 中的 __libc_dlopen_mode() 函数的地址。</p>
+<p>通常有两种方法得到该函数的地址。</p>
+<p>第一种方法是直接读取进程中 <a target="_blank" rel="noopener" href="http://libc.so">libc.so</a> 对应的地址空间中的内容，然后可以发现这些内容可以使用ELF的格式进行解析。那么就可以找到 <a target="_blank" rel="noopener" href="http://libc.so">libc.so</a> 位于进程中的ELF文件头、程序头表，进而得到 <a target="_blank" rel="noopener" href="http://libc.so">libc.so</a> 的动态段的地址，然后得到动态符号表(.dynsym)、动态字符表(.dynstr)，然后查询符号表获得__libc_dlopen_mode() 函数的地址。</p>
+<p>这种比较容易实现，但是在有些 libc 版本中能够实现，但是在有些 libc 版本中却无法搜索到 __libc_dlopen_mode() 这个符号。</p>
+<p>所以通常会采用另一种更加可靠的方法，使用link_map进行查找，而具体的符号查找方法需要使用到GNU hash相关的知识，这篇文章将会介绍如何使用GNU hash进行符号查找。</p>
+<p>ref. <a target="_blank" rel="noopener" href="https://blogs.oracle.com/solaris/post/gnu-hash-elf-sections">GNU Hash ELF Sections</a></p>
+<h4 id="Hash-function">Hash function</h4>
+<p>GNU hash函数使用的是 DJB(Daniel J Bernstein) 哈希算法，算法的代码如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-type">uint32_t</span><br><span class="hljs-title function_">dl_new_hash</span> <span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span> *s)</span><br>&#123;<br>	<span class="hljs-type">uint32_t</span> h = <span class="hljs-number">5381</span>;<br><br>	<span class="hljs-keyword">for</span> (<span class="hljs-type">unsigned</span> <span class="hljs-type">char</span> c = *s; c != <span class="hljs-string">&#x27;\0&#x27;</span>; c = *++s)<br>		h = h * <span class="hljs-number">33</span> + c; <span class="hljs-comment">// or h = ((h &lt;&lt; 5) + h) + c;</span><br><br>	<span class="hljs-keyword">return</span> h;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>上面的代码将接受一个字符串作为参数，然后计算该字符串的DJB哈希值。</p>
+<figure class="highlight abnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs abnf"><br>printf(<span class="hljs-string">&quot;hello world!\n&quot;</span>)<span class="hljs-comment">;</span><br><br></code></pre></td></tr></table></figure>
+<p>使用GNU hash，动态符号表将会被划分为两个不同的部分，第一部分是能够从hash表中省略的符号，GNU hash并不会对这一部分施加特定的顺序；第二部分就是能够通过 GNU hash查找到的符号，对于这部分符号，GNU hash将会按照 (hash % nbuckets) 值递增排序，hash值使用上面的方法进行计算，而nbuckets就是哈希桶的数量，哈希桶的数量在GNU hash节中保存。因此位于同一个哈希链中的符号在内存中也是邻接的，提高了空间局部性。</p>
+<h3 id="GNU-hash-节">GNU hash 节</h3>
 
                 
               </div>
@@ -294,6 +296,34 @@
             <div>
               <div class="post-metas my-3">
   
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/notes/" class="category-chain-item">notes</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/binary-analysi/">#binary analysi</a>
+      
+    </div>
   
 </div>
 
@@ -303,8 +333,8 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>Hexo basic usage</div>
-      <div>https://2hyan9.github.io/2022/10/12/hexo-basic-usage/</div>
+      <div>gnu hash notes</div>
+      <div>https://2hyan9.github.io/2022/10/17/gnu-hash-notes/gnu-hash-notes/</div>
     </div>
     <div class="license-meta">
       
@@ -316,7 +346,7 @@
       
         <div class="license-meta-item license-meta-date">
           <div>发布于</div>
-          <div>2022年10月12日</div>
+          <div>2022年10月17日</div>
         </div>
       
       
@@ -348,15 +378,15 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2022/10/12/gdb-usage/gdb-usage/" title="gdb_usage">
-                        <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">gdb_usage</span>
-                        <span class="visible-mobile">上一篇</span>
-                      </a>
-                    
                   </article>
                   <article class="post-next col-6">
                     
+                    
+                      <a href="/2022/10/14/DynamoRIO-Tutorial/DynamoRIO-Tutorial/" title="DynamoRIO Tutorial">
+                        <span class="hidden-mobile">DynamoRIO Tutorial</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
                     
                   </article>
                 </div>
