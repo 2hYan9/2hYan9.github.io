@@ -24,8 +24,9 @@
 <meta property="og:description" content="GNU Hash notes Linux系统中，在ELF文件的全局偏移表(Global Offset Table, GOT)中的第1个条目用于存放该文件动态段(DT_DYNAMIC)的地址，第2个条目用于存放link_map的地址，第3个条目用于存放链接器(ld.so)的地址，准确的说应该是动态链接器_dl_runtime_resolve()函数的地址。 在进行动态库注入实验时，要使用dlopen">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://2hyan9.github.io/2022/10/17/gnu-hash-notes/image/gnu_hash_illustration.png">
+<meta property="og:image" content="https://2hyan9.github.io/2022/10/17/gnu-hash-notes/image/symbol_verification.png">
 <meta property="article:published_time" content="2022-10-17T12:03:23.000Z">
-<meta property="article:modified_time" content="2022-10-22T13:31:21.674Z">
+<meta property="article:modified_time" content="2022-10-24T09:08:24.147Z">
 <meta property="article:author" content="2hYan9">
 <meta property="article:tag" content="binary analysis">
 <meta name="twitter:card" content="summary_large_image">
@@ -221,7 +222,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          6k 字
+          6.3k 字
         
       </span>
     
@@ -232,7 +233,7 @@
         
         
         
-          51 分钟
+          53 分钟
         
       </span>
     
@@ -371,22 +372,26 @@
 <p>这里以ld.so为例，通过 readelf -x 得到.gnu.hash节的内容如下：</p>
 <p><img src="./image/gnu_hash_illustration.png" srcset="/img/loading.gif" lazyload alt=".gnu.hash_illustration"></p>
 <p>​	*注意，使用readelf -x 得到的hex dump内容是以小端排序的，也就是以字节为单位从左到右是低位到高位的。</p>
-<p>在下面的实验中，将会在libc.so中查找符号__libc_dlopen_mode符号。</p>
-<p>libc.so的.gnu.hash节的头部信息如下：</p>
-<p>nbuckets = 0x03ff, symndx = 0x12, maskwords = 0x0100, shift2 = 0x0e.</p>
-<p>因此计算符号_dl_open的两个哈希值：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-type">uint32_t</span> h1 = dl_new_hash(<span class="hljs-string">&quot;_dl_open&quot;</span>);<br><span class="hljs-type">uint32_t</span> h2 = h1 &gt;&gt; <span class="hljs-number">0xe</span>;<br><span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;H1 -&gt; 0x%x\n&quot;</span>, h1);		<span class="hljs-comment">// 0xf2cb98a2</span><br><span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;H2 -&gt; 0x%x\n&quot;</span>, h2);		<span class="hljs-comment">// 0x3cb2e</span><br></code></pre></td></tr></table></figure>
-<p>两个哈希值分别为：“0xf2cb98a2”, “0x3cb2e”。</p>
+<p>在下面的实验中，将会在ld.so中查找符号_dl_allocate_tls符号。</p>
+<p>首先读取ld.so的.gnu.hash节的头部信息如下：</p>
+<p>nbuckets = 0x25, symndx = 0x1, maskwords = 0x04, shift2 = 0x08.</p>
+<p>然后计算符号_dl_open的两个哈希值：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-type">uint32_t</span> h1 = dl_new_hash(<span class="hljs-string">&quot;_dl_allocate_tls&quot;</span>);<br><span class="hljs-type">uint32_t</span> h2 = h1 &gt;&gt; <span class="hljs-number">0x8</span>;<br><span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;H1 -&gt; 0x%x\n&quot;</span>, h1);		<span class="hljs-comment">// 0x24bbd60a</span><br><span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;H2 -&gt; 0x%x\n&quot;</span>, h2);		<span class="hljs-comment">// 0x24bbd6</span><br></code></pre></td></tr></table></figure>
+<p>两个哈希值分别为：“0x24bbd60a”, “0x24bbd6”。</p>
 <p>然后计算需要使用哪个布隆掩码字：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-type">uint32_t</span> N = (h1 / <span class="hljs-number">64</span>) &amp; (<span class="hljs-number">0x100</span> - <span class="hljs-number">1</span>);<br><span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;N -&gt; 0x%x\n&quot;</span>, N1);		<span class="hljs-comment">// 0x62</span><br></code></pre></td></tr></table></figure>
-<p>得到的结果是使用第0x62个布隆掩码字，从libc.so的.gnu.hash节中找到第0x62个布隆掩码字的取值为&quot;0xc0045009 46080000&quot;。</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-type">uint64_t</span> bloom_word = <span class="hljs-number">0xc004500946080000</span>;<br><span class="hljs-type">uint64_t</span> bitmask = (<span class="hljs-number">1</span> &lt;&lt; (h1 &amp; (<span class="hljs-number">64</span> - <span class="hljs-number">1</span>))) | (<span class="hljs-number">1</span> &lt;&lt; (h2 &amp; (<span class="hljs-number">64</span> - <span class="hljs-number">1</span>)));<br><span class="hljs-type">int</span> is_pass = bloom_word &amp; bitmask == bitmask ? <span class="hljs-number">1</span> : <span class="hljs-number">0</span>;<br><span class="hljs-keyword">if</span>(is_pass)<br>	<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;pass the bloom filter\n&quot;</span>);<br><span class="hljs-keyword">else</span><br>	<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;didn&#x27;t pass the bloom filter\n&quot;</span>);<br></code></pre></td></tr></table></figure>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-type">uint32_t</span> N = (h1 / <span class="hljs-number">64</span>) &amp; (<span class="hljs-number">0x4</span> - <span class="hljs-number">1</span>);<br><span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;N -&gt; 0x%x\n&quot;</span>, N1);		<span class="hljs-comment">// 0x0</span><br></code></pre></td></tr></table></figure>
+<p>得到的结果是使用第0x0个布隆掩码字，从ld.so的.gnu.hash节中找到第0x0个布隆掩码字的取值为&quot;0x1780041808413420&quot;。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-type">uint64_t</span> bloom_word = <span class="hljs-number">0x1780041808413420</span>;<br><span class="hljs-type">uint64_t</span> bitmask = (<span class="hljs-number">1</span> &lt;&lt; (h1 % <span class="hljs-number">64</span>)) | (<span class="hljs-number">1</span> &lt;&lt; (h2 % <span class="hljs-number">64</span>));<br><span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;%d\n&quot;</span>, (bloom_word &amp; bitmask) == bitmask ? <span class="hljs-number">1</span> : <span class="hljs-number">0</span>); <span class="hljs-comment">// 1</span><br></code></pre></td></tr></table></figure>
 <p>结果是通过了布隆过滤器。</p>
 <p>然后找到哈希值所在的哈希桶：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-type">int</span> nbuckets = <span class="hljs-number">0x25</span>;<br><span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;0x%x\n&quot;</span>, h1 % nbuckets);<br></code></pre></td></tr></table></figure>
-<p>得到的结果是0x1a，所以符号表Sym[0x1a]所对应的符号就是第一个满足(dl_new_hash(sym_str) % nbuckets == 0x25)的符号。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-type">int</span> nbuckets = <span class="hljs-number">0x25</span>;<br><span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;0x%x\n&quot;</span>, h1 % nbuckets); <span class="hljs-comment">// 0x5</span><br></code></pre></td></tr></table></figure>
+<p>得到的结果是0x5，查看哈希桶buckets[0x05]中的内容，从上图可以看到这个哈希桶中的内容为0x4。也就是符号表dynsym[0x4]对应的符号就是属于该哈希桶的第一个符号。</p>
 <p>然后下一步就是从哈希链中找到对应的符号，哈希链位于.gnu.hash节中的最后一部分，这部分内容保存中动态符号表中每一个可以通过哈希查找的符号的哈希值的前31位。<strong>哈希链中的哈希值的顺序与符号表中的顺序是对应的</strong>，即符号表 ndx 索引处的符号的哈希值在哈希链中的下标为 ndx - symndx。</p>
-<p>从符号表中的Sym[0x1a]条目开始，哈希链从hashval[0x1a - symndx]开始，然后</p>
+<p>因此，将符号表下标初始化为0x04，哈希链下标初始化为 0x04 - symndx = 0x03，然后比对哈希值已经符号表条目的st_name字段，判断是否是我们要找的符号。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-type">int</span> n = <span class="hljs-number">0x4</span>;<br>Elf64_Sym *sym = &amp;dynsym[n];<br><span class="hljs-type">uint32_t</span> *hash_val = &amp;hashval[n - symndx];<br><span class="hljs-keyword">for</span>(h1 &amp;= ~<span class="hljs-number">1</span>; <span class="hljs-number">1</span>; sym++)<br>&#123;<br>    h2 = *hash_val++;<br>    <span class="hljs-keyword">if</span>((h1 == (h2 &amp; ~<span class="hljs-number">1</span>)) &amp;&amp;<br>      	!<span class="hljs-built_in">strcmp</span>(<span class="hljs-string">&quot;_dl_allocate_tls&quot;</span>, dynstr + sym-&gt;st_name))<br>        <span class="hljs-keyword">return</span> sym;<br>    <span class="hljs-keyword">if</span>(h2 &amp; <span class="hljs-number">1</span>)<br>        <span class="hljs-keyword">break</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>得到的符号表条目中的 st_value 字段取值为 “0x147a0”，使用nm来验证这一结果：</p>
+<p><img src="./image/symbol_verification.png" srcset="/img/loading.gif" lazyload alt="symbol_verification"></p>
+<p>可以看到能够正确地获取到dl_allocate_tls符号对应的符号表条目。</p>
 
                 
               </div>
