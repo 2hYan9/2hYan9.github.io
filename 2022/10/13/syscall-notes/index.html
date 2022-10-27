@@ -24,7 +24,7 @@
 <meta property="og:description" content="Syscall Notes 在计算机中，系统调用是一种编程方式，计算机程序通过该方式向操作系统的内核请求服务。系统调用是一种计算机程序与操作系统互动的方式：计算机程序通过系统调用向操作系统内核请求服务，而系统调用则会通过API(Application Program Interface)向用户程序提供操作系统的服务。 系统调用提供了进程和操作系统之间的接口，以允许用户级进程请求操作系统的服务。系统">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2022-10-13T07:44:31.000Z">
-<meta property="article:modified_time" content="2022-10-18T12:28:31.445Z">
+<meta property="article:modified_time" content="2022-10-27T03:12:50.625Z">
 <meta property="article:author" content="2hYan9">
 <meta property="article:tag" content="binary analysis">
 <meta name="twitter:card" content="summary_large_image">
@@ -219,7 +219,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          1.4k 字
+          1.5k 字
         
       </span>
     
@@ -230,7 +230,7 @@
         
         
         
-          12 分钟
+          13 分钟
         
       </span>
     
@@ -287,6 +287,7 @@
 <p>在计算机中，系统调用是一种编程方式，计算机程序通过该方式向操作系统的内核请求服务。系统调用是一种计算机程序与操作系统互动的方式：计算机程序通过系统调用向操作系统内核请求服务，而系统调用则会通过API(Application Program Interface)向用户程序提供操作系统的服务。</p>
 <p>系统调用提供了进程和操作系统之间的接口，以允许用户级进程请求操作系统的服务。系统调用是内核系统的唯一入口点， 所有需要资源的程序都必须通过系统调用获取相应资源。</p>
 <h3 id="关于中断">关于中断</h3>
+<p>ref. 《汇编语言》(第4版，王爽著)</p>
 <p><em>任何一种通用的CPU都必须具备一种能力，即可以在执行完当前正在执行的指令之后，检测到从CPU外部发送过来的或内部产生的一种特殊信息，并且可以立即对所接收到的信息进行处理</em>。</p>
 <p>这种特殊的信息就是所谓的中断(Interrupt, sometimes refered to as trap)信息，<u>中断信息会使CPU不再继续从刚执行完的指令向下执行，而是转而去处理这个特殊的信息</u>。中断信息会要求CPU马上进行某种处理，并向所要进行的该种处理提供了必备的参数的通知信息。</p>
 <p>中断信息可以来自CPU的内部或者外部，来自CPU内部的中断信息通常被称为<strong>内中断</strong>，来自CPU外部（外设，比如键盘）的中断信息通常被称为<strong>外中断</strong>，这里主要介绍内中断。</p>
@@ -317,6 +318,9 @@
 <li>从中断向量表中读取该类型中断对应的中断向量，并设置程序计数器的值为该中断向量</li>
 </ol>
 <p>从中断处理程序回到原来执行的地址则需要使用<code>iret</code>指令，该指令的功能用汇编语法描述为：<code>pop PC; pop flag</code>，也就是恢复程序计数器，然后恢复标志寄存器原来的值。</p>
+<h3 id="操作系统基本概念">操作系统基本概念</h3>
+<p>这里将会进一步介绍一些操作系统相关的基本概念</p>
+<h4 id="User-Kernel">User &amp; Kernel</h4>
 
                 
               </div>
