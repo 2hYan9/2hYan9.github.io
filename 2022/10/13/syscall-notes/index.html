@@ -23,14 +23,15 @@
 <meta property="og:site_name" content="TheFuture1sNow">
 <meta property="og:description" content="Syscall Notes 在计算机中，系统调用是一种编程方式，计算机程序通过该方式向操作系统的内核请求服务。系统调用是一种计算机程序与操作系统互动的方式：计算机程序通过系统调用向操作系统内核请求服务，而系统调用则会通过API(Application Program Interface)向用户程序提供操作系统的服务。 系统调用提供了进程和操作系统之间的接口，以允许用户级进程请求操作系统的服务。系统">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="d:%5CBlog%5Csource_posts%5Csyscall-notes%5Cimage%5CLinux_syscall.png">
-<meta property="og:image" content="d:%5CBlog%5Csource_posts%5Csyscall-notes%5Cimage%5Csyscall_control_flow.png">
+<meta property="og:image" content="https://2hyan9.github.io/2022/10/13/syscall-notes/.%5Cimage%5CLinux_syscall.png">
+<meta property="og:image" content="https://2hyan9.github.io/2022/10/13/syscall-notes/.%5Cimage%5Csyscall_control_flow.png">
+<meta property="og:image" content="https://2hyan9.github.io/2022/10/13/syscall-notes/.%5Cimage%5Cprocess_maps.png">
 <meta property="article:published_time" content="2022-10-13T07:44:31.000Z">
-<meta property="article:modified_time" content="2022-11-11T13:02:53.528Z">
+<meta property="article:modified_time" content="2022-11-11T13:52:03.022Z">
 <meta property="article:author" content="2hYan9">
 <meta property="article:tag" content="binary analysis">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="d:%5CBlog%5Csource_posts%5Csyscall-notes%5Cimage%5CLinux_syscall.png">
+<meta name="twitter:image" content="https://2hyan9.github.io/2022/10/13/syscall-notes/.%5Cimage%5CLinux_syscall.png">
   
   
   
@@ -222,7 +223,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          3.5k 字
+          4.2k 字
         
       </span>
     
@@ -233,7 +234,7 @@
         
         
         
-          29 分钟
+          35 分钟
         
       </span>
     
@@ -324,7 +325,7 @@
 <h3 id="Linux系统调用">Linux系统调用</h3>
 <p>ref. <a target="_blank" rel="noopener" href="https://linux-kernel-labs.github.io/refs/heads/master/index.html">linux kernel labs</a></p>
 <p>类似于函数库中的API，系统调用是内核向高层(high level)用户应用提供的服务。</p>
-<p><img src="D:%5CBlog%5Csource_posts%5Csyscall-notes%5Cimage%5CLinux_syscall.png" srcset="/img/loading.gif" lazyload alt="linux_syscall"></p>
+<p><img src=".%5Cimage%5CLinux_syscall.png" srcset="/img/loading.gif" lazyload alt="linux_syscall"></p>
 <p>然后，实际上系统调用与常规的函数调用有很大的区别，系统调用是用于完成下列任务的特定的汇编指令：</p>
 <ul>
 <li>设置相关信息以识别系统调用以及参数</li>
@@ -335,7 +336,7 @@
 <p>比如在X64的机器上，RAX用于传递系统调用号，而系统调用的6个参数从左到右则分别由%rdi, %rsi, %rdx, %r10, %r8, %r9这几个寄存器进行传递。</p>
 <p>系统函数库(e.g.: libc)提供了一些实现系统调用的函数，从而使用户应用能够更方便地使用系统调用。</p>
 <p>当发生用户到内核模式的转换时，用户应用执行流程将会被中断并被转移到内核入口点。系统调用入口点将寄存器（其中包含来自用户空间的值，包括系统调用号和系统调用参数）保存在堆栈上，然后继续执行系统调用调度程序(system call dispatcher)。</p>
-<p><img src="D:%5CBlog%5Csource_posts%5Csyscall-notes%5Cimage%5Csyscall_control_flow.png" srcset="/img/loading.gif" lazyload alt="syscall_control_flow"></p>
+<p><img src=".%5Cimage%5Csyscall_control_flow.png" srcset="/img/loading.gif" lazyload alt="syscall_control_flow"></p>
 <p>系统调用调度程序所完成的任务主要是检查系统调用号，然后调用对应的内核函数。下面的代码演示了系统调用掉程序的工作：</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-comment">/* Handles int $0x80 */</span><br>__visible <span class="hljs-type">void</span> <span class="hljs-title function_">do_int80_syscall_32</span><span class="hljs-params">(<span class="hljs-keyword">struct</span> pt_regs *regs)</span><br>&#123;<br>    enter_from_user_mode();<br>    local_irq_enable();<br>    do_syscall_32_irqs_on(regs);<br>&#125;<br><br><span class="hljs-comment">/* simplified version of the Linux x86 32bit System Call Dispatcher */</span><br><span class="hljs-type">static</span> __always_inline <span class="hljs-type">void</span> <span class="hljs-title function_">do_syscall_32_irqs_on</span><span class="hljs-params">(<span class="hljs-keyword">struct</span> pt_regs *regs)</span><br>&#123;<br>    <span class="hljs-type">unsigned</span> <span class="hljs-type">int</span> nr = regs-&gt;orig_ax;<br><br>    <span class="hljs-keyword">if</span> (nr &lt; IA32_NR_syscalls)<br>        regs-&gt;ax = ia32_sys_call_table[nr](regs-&gt;bx, regs-&gt;cx,<br>                                           regs-&gt;dx, regs-&gt;si,<br>                                           regs-&gt;di, regs-&gt;bp);<br>    syscall_return_slowpath(regs);<br>&#125;<br></code></pre></td></tr></table></figure>
 <p>在X86 32bit的机器上，系统调用号使用EAX寄存器传递，而系统调用的6个参数则分别通过EBX, ECX, EDX, ESI, EDI, EBP寄存器传递。</p>
@@ -352,6 +353,11 @@
 <p>比如，用户应用调用一个read()或者write()系统调用，如果传递的指针是指向内核空间的，那么系统调用的执行可能会read()系统调用读取一个文件后对内核空间的内存造成污染。</p>
 <p>同样的，如果用户应用传递的指针是无效的，也就是未映射的，或者对只读区域进行写操作，那么会导致内核崩溃。</p>
 <h4 id="Virtual-Dynamic-Shared-Object-VDSO">Virtual Dynamic Shared Object(VDSO)</h4>
+<p>这项技术是为了对部分系统调用进行加速，具体做法是内核会生成一段用于启动系统调用的指令，这些指令会被格式化为ELF共享目标，并映射到用户空间结束的地址。libc在需要调用系统调用时，将会从VDSO中搜索相关系统调用，并使用其中的指令启动系统调用。</p>
+<p>VDSO技术包含虚拟系统调用(Virtual System Call, vsyscalls)，之所以称其为虚拟系统调用是因为这些虚拟系统调用能够直接在用户空间运行。vsyscall也是VDSO中的一部分，它们能够从VDSO的内存页中访问数据，这些数据要么是静态的，要么是由内核在VDSO内存区域中的单独的读写映射区域(separate read-write map)中修改的。</p>
+<p>通常使用/proc/self/map文件读取到的目标进程的内存映射中，除了目标进程对应的二进制文件的映射区域，堆区域，栈区域以及目标进程所依赖的共享目标的映射区域以外，还包含另外三个额外的区域: “vdso”, “vsyscall”, “vvar”，如下：</p>
+<p><img src=".%5Cimage%5Cprocess_maps.png" srcset="/img/loading.gif" lazyload alt="process_maps"></p>
+<p>这三个额外的区域就是为了VDSO技术是映射的内存区域，其中&quot;vdso&quot;就是前面提到的由内核生成的用于启动系统调用的指令，被格式化为ELF共享目标，和普通的代码段一样，执行权限是&quot;RX&quot;。“vsyscall&quot;就是虚拟系统调用所使用的内存映射区域，可以看到这块区域的执行权限是&quot;X”，也就是用户应用无法直接访问这块区域，但是这块区域中存放着可执行的代码，&quot;vvar&quot;就是vsyscall与VDSO进行数据交互所使用的内存映射区域，执行权限为只读的。</p>
 
                 
               </div>
