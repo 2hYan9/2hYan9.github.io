@@ -23,11 +23,14 @@
 <meta property="og:site_name" content="TheFuture1sNow">
 <meta property="og:description" content="Syscall Notes 在计算机中，系统调用是一种编程方式，计算机程序通过该方式向操作系统的内核请求服务。系统调用是一种计算机程序与操作系统互动的方式：计算机程序通过系统调用向操作系统内核请求服务，而系统调用则会通过API(Application Program Interface)向用户程序提供操作系统的服务。 系统调用提供了进程和操作系统之间的接口，以允许用户级进程请求操作系统的服务。系统">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="d:%5CBlog%5Csource_posts%5Csyscall-notes%5Cimage%5CLinux_syscall.png">
+<meta property="og:image" content="d:%5CBlog%5Csource_posts%5Csyscall-notes%5Cimage%5Csyscall_control_flow.png">
 <meta property="article:published_time" content="2022-10-13T07:44:31.000Z">
-<meta property="article:modified_time" content="2022-10-27T03:12:50.625Z">
+<meta property="article:modified_time" content="2022-11-11T13:02:53.528Z">
 <meta property="article:author" content="2hYan9">
 <meta property="article:tag" content="binary analysis">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="d:%5CBlog%5Csource_posts%5Csyscall-notes%5Cimage%5CLinux_syscall.png">
   
   
   
@@ -219,7 +222,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          1.5k 字
+          3.5k 字
         
       </span>
     
@@ -230,7 +233,7 @@
         
         
         
-          13 分钟
+          29 分钟
         
       </span>
     
@@ -318,9 +321,37 @@
 <li>从中断向量表中读取该类型中断对应的中断向量，并设置程序计数器的值为该中断向量</li>
 </ol>
 <p>从中断处理程序回到原来执行的地址则需要使用<code>iret</code>指令，该指令的功能用汇编语法描述为：<code>pop PC; pop flag</code>，也就是恢复程序计数器，然后恢复标志寄存器原来的值。</p>
-<h3 id="操作系统基本概念">操作系统基本概念</h3>
-<p>这里将会进一步介绍一些操作系统相关的基本概念</p>
-<h4 id="User-Kernel">User &amp; Kernel</h4>
+<h3 id="Linux系统调用">Linux系统调用</h3>
+<p>ref. <a target="_blank" rel="noopener" href="https://linux-kernel-labs.github.io/refs/heads/master/index.html">linux kernel labs</a></p>
+<p>类似于函数库中的API，系统调用是内核向高层(high level)用户应用提供的服务。</p>
+<p><img src="D:%5CBlog%5Csource_posts%5Csyscall-notes%5Cimage%5CLinux_syscall.png" srcset="/img/loading.gif" lazyload alt="linux_syscall"></p>
+<p>然后，实际上系统调用与常规的函数调用有很大的区别，系统调用是用于完成下列任务的特定的汇编指令：</p>
+<ul>
+<li>设置相关信息以识别系统调用以及参数</li>
+<li>触发内核模式的切换</li>
+<li>收集系统调用执行的结果</li>
+</ul>
+<p>在Linux上，系统调用由系统调用号进行识别，系统调用最多只能接受6个参数。系统调用号和系统调用的参数都是通过指定的寄存器进行传递。</p>
+<p>比如在X64的机器上，RAX用于传递系统调用号，而系统调用的6个参数从左到右则分别由%rdi, %rsi, %rdx, %r10, %r8, %r9这几个寄存器进行传递。</p>
+<p>系统函数库(e.g.: libc)提供了一些实现系统调用的函数，从而使用户应用能够更方便地使用系统调用。</p>
+<p>当发生用户到内核模式的转换时，用户应用执行流程将会被中断并被转移到内核入口点。系统调用入口点将寄存器（其中包含来自用户空间的值，包括系统调用号和系统调用参数）保存在堆栈上，然后继续执行系统调用调度程序(system call dispatcher)。</p>
+<p><img src="D:%5CBlog%5Csource_posts%5Csyscall-notes%5Cimage%5Csyscall_control_flow.png" srcset="/img/loading.gif" lazyload alt="syscall_control_flow"></p>
+<p>系统调用调度程序所完成的任务主要是检查系统调用号，然后调用对应的内核函数。下面的代码演示了系统调用掉程序的工作：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-comment">/* Handles int $0x80 */</span><br>__visible <span class="hljs-type">void</span> <span class="hljs-title function_">do_int80_syscall_32</span><span class="hljs-params">(<span class="hljs-keyword">struct</span> pt_regs *regs)</span><br>&#123;<br>    enter_from_user_mode();<br>    local_irq_enable();<br>    do_syscall_32_irqs_on(regs);<br>&#125;<br><br><span class="hljs-comment">/* simplified version of the Linux x86 32bit System Call Dispatcher */</span><br><span class="hljs-type">static</span> __always_inline <span class="hljs-type">void</span> <span class="hljs-title function_">do_syscall_32_irqs_on</span><span class="hljs-params">(<span class="hljs-keyword">struct</span> pt_regs *regs)</span><br>&#123;<br>    <span class="hljs-type">unsigned</span> <span class="hljs-type">int</span> nr = regs-&gt;orig_ax;<br><br>    <span class="hljs-keyword">if</span> (nr &lt; IA32_NR_syscalls)<br>        regs-&gt;ax = ia32_sys_call_table[nr](regs-&gt;bx, regs-&gt;cx,<br>                                           regs-&gt;dx, regs-&gt;si,<br>                                           regs-&gt;di, regs-&gt;bp);<br>    syscall_return_slowpath(regs);<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>在X86 32bit的机器上，系统调用号使用EAX寄存器传递，而系统调用的6个参数则分别通过EBX, ECX, EDX, ESI, EDI, EBP寄存器传递。</p>
+<p>系统调用表就是系统调用调度器用以将系统调用号映射到内核函数的工具。</p>
+<p>下面的代码演示了系统调用表的原理：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-meta">#<span class="hljs-keyword">define</span> __SYSCALL_I386(nr, sym, qual) [nr] = sym,</span><br><br><span class="hljs-type">const</span> <span class="hljs-type">sys_call_ptr_t</span> ia32_sys_call_table[] = &#123;<br>  [<span class="hljs-number">0</span> ... __NR_syscall_compat_max] = &amp;sys_ni_syscall,<br>  <span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;asm/syscalls_32.h&gt;</span></span><br>&#125;;<br><br><span class="hljs-comment">// some system calls</span><br>__SYSCALL_I386(<span class="hljs-number">0</span>, sys_restart_syscall, )<br>__SYSCALL_I386(<span class="hljs-number">1</span>, sys_exit, )<br><span class="hljs-meta">#<span class="hljs-keyword">ifdef</span> CONFIG_X86_32</span><br>__SYSCALL_I386(<span class="hljs-number">2</span>, sys_fork, )<br><span class="hljs-meta">#<span class="hljs-keyword">else</span></span><br>__SYSCALL_I386(<span class="hljs-number">2</span>, sys_fork, )<br><span class="hljs-meta">#<span class="hljs-keyword">endif</span></span><br>__SYSCALL_I386(<span class="hljs-number">3</span>, sys_read, )<br>__SYSCALL_I386(<span class="hljs-number">4</span>, sys_write, )<br></code></pre></td></tr></table></figure>
+<p>内核在执行系统调用对应的内核函数时，需要对用户传递来的参数进行处理。因为这些参数都是从用户空间传递过来的，内核无法假设这些参数的正确性，所以必须对其进行彻底的验证。</p>
+<p>参数的验证是有必要的，因为系统调用是在内核模式下执行的，所以系统调用在执行期间是能够访问内核空间的，比如对于参数中的指针，必须检查下面两种情况：</p>
+<ul>
+<li>不允许指向内核空间的指针</li>
+<li>检查指针是否是有效的</li>
+</ul>
+<p>这里之所以不能允许用户应用传递指向内核空间的指针作为参数，是因为内核模式下执行的系统调用接受这样的参数可能会导致意料之外的错误。</p>
+<p>比如，用户应用调用一个read()或者write()系统调用，如果传递的指针是指向内核空间的，那么系统调用的执行可能会read()系统调用读取一个文件后对内核空间的内存造成污染。</p>
+<p>同样的，如果用户应用传递的指针是无效的，也就是未映射的，或者对只读区域进行写操作，那么会导致内核崩溃。</p>
+<h4 id="Virtual-Dynamic-Shared-Object-VDSO">Virtual Dynamic Shared Object(VDSO)</h4>
 
                 
               </div>
