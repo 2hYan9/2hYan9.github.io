@@ -4,6 +4,31 @@
   
   
   <entry>
+    <title>二进制加壳与脱壳</title>
+    <link href="/2022/12/06/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%8A%A0%E5%A3%B3%E4%B8%8E%E8%84%B1%E5%A3%B3/"/>
+    <url>/2022/12/06/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%8A%A0%E5%A3%B3%E4%B8%8E%E8%84%B1%E5%A3%B3/</url>
+    
+    <content type="html"><![CDATA[<h2 id="二进制加壳与脱壳">二进制加壳与脱壳</h2><p>通常恶意软件作者为了避免恶意软件被二进制分析或者逆向研究，会对恶意软件进行加壳保护。</p><p>简单来讲，加壳就是将原来的可执行文件进行压缩或者加密，然后放在另一个可执行文件的数据段中，这个新的可执行文件将会在运行时对原来的可执行文件进行解压缩或者解密，这些操作都是在内存中进行的。然后再将其映射到内存中执行，整个过程都不会在磁盘上写入数据，所以也就无法被静态分析。</p><p>如下图所示：</p><p><img src="./image/protected_binary.png" alt="protected_binary"></p><p>虽然无法通过静态的方法分析原来的二进制文件，但是可以使用动态的方法进行分析。</p><p>注意到加壳后的可执行文件会先在内存中对原来的二进制文件进行解压或者解密后，再将其映射到内存并将控制权转移到二进制文件原来的入口点(Original Entry Point)。</p><p>因此，我们可以在加壳后的可执行文件运行时跟踪其内存读写的操作，进而获取到原来的二进制文件，然后再进一步进行二进制分析。</p><p>想要在程序运行时动态跟踪其内存读写操作，需要使用动态二进制插桩(Dynamic Binary Instrumentation, DBI)技术。</p><h3 id="如何使用Pin">如何使用Pin</h3><p>整个文档将会介绍使用动态二进制插桩平台(DBI Platform) Pin进行一个自动脱壳的实验。</p><p>Pin工具文档：<a href="https://software.intel.com/sites/landingpage/pintool/docs/98650/Pin/doc/html/index.html">Pin: Pin 3.25 User Guide</a></p><p>如果想要了解更多关于二进制插桩的内容，可以参考博客</p><p><a href="https://2hyan9.github.io/2022/10/14/DynamoRIO-Tutorial/">DynamoRIO Tutorial</a></p><p>这篇博客介绍了DynamoRIO的使用方法，DynamoRIO和Pin一样是动态二进制插桩平台，它们的原理基本都是一样的，只是实现细节和优化方法存在差异。</p><p>和DynamoRIO一样，用户在定义DBI工具(client in DynamoRIO, pintools in Pin)时主要定义两部分代码：</p><ol><li>插桩代码：决定在什么地方插入什么代码</li><li>分析代码：在插入点执行的代码</li></ol><p>Pin支持多种细粒度的二进制插桩：</p><ul><li><p>指令插桩：一次仅对二进制文件的一条指令进行检查并插桩，使用&quot;INS_AddInstrumentFunction()&quot;进行注册</p></li><li><p>基本块插桩：对一个基本块进行插桩，也就是为一次对一个基本块调用一次分析函数，使用&quot;TRACE_AddInstrumentFunction()&quot;进行注册。</p><p>Pin中并不能直接对基本块进行插桩，如果要对基本块插桩，就需要使用Trace插桩粒度，然后遍历Trace中的基本块进行分析和插桩</p></li><li><p>函数插桩：当可执行文件首次加载函数时，能够在DBI工具中检查并插桩整个函数的指令，使用&quot;RTN_AddInstrumentFunction()&quot;进行注册</p></li><li><p>IMAGE插桩：DBI工具在一个整个镜像(Image, an entire executable or library)首次被加载到内存时，对其进行检查并插桩，使用&quot;IMG_AddInstrumentFunction()&quot;进行注册</p></li></ul><p>下面将使用一个简单的例子介绍如何使用Pin搭建DBI工具。</p><p>这个例子是官方文档中的例子，对一个程序所执行的指令进行计数。</p><h3 id="使用Pin实现自动脱壳">使用Pin实现自动脱壳</h3>]]></content>
+    
+    
+    <categories>
+      
+      <category>experiment log</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>binary analysis</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
     <title>custom disassemble</title>
     <link href="/2022/11/25/custom-disassemble/"/>
     <url>/2022/11/25/custom-disassemble/</url>
@@ -13,7 +38,7 @@
     
     <categories>
       
-      <category>notes</category>
+      <category>experiment log</category>
       
     </categories>
     
@@ -88,7 +113,7 @@
     
     <categories>
       
-      <category>notes</category>
+      <category>experiment log</category>
       
     </categories>
     
