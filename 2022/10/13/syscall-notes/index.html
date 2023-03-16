@@ -1,0 +1,717 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="2hYan9">
+  <meta name="keywords" content="some notes">
+  
+    <meta name="description" content="Syscall Notes 在计算机中，系统调用是一种编程方式，计算机程序通过该方式向操作系统的内核请求服务。系统调用是一种计算机程序与操作系统互动的方式：计算机程序通过系统调用向操作系统内核请求服务，而系统调用则会通过API(Application Program Interface)向用户程序提供操作系统的服务。 系统调用提供了进程和操作系统之间的接口，以允许用户级进程请求操作系统的服务。系统">
+<meta property="og:type" content="article">
+<meta property="og:title" content="syscall_notes">
+<meta property="og:url" content="https://2hyan9.github.io/2022/10/13/syscall-notes/index.html">
+<meta property="og:site_name" content="TheFuture1sNow">
+<meta property="og:description" content="Syscall Notes 在计算机中，系统调用是一种编程方式，计算机程序通过该方式向操作系统的内核请求服务。系统调用是一种计算机程序与操作系统互动的方式：计算机程序通过系统调用向操作系统内核请求服务，而系统调用则会通过API(Application Program Interface)向用户程序提供操作系统的服务。 系统调用提供了进程和操作系统之间的接口，以允许用户级进程请求操作系统的服务。系统">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://2hyan9.github.io/2022/10/13/syscall-notes/image/Linux_syscall.png">
+<meta property="og:image" content="https://2hyan9.github.io/2022/10/13/syscall-notes/image/syscall_control_flow.png">
+<meta property="og:image" content="https://2hyan9.github.io/2022/10/13/syscall-notes/image/process_maps.png">
+<meta property="article:published_time" content="2022-10-13T07:44:31.000Z">
+<meta property="article:modified_time" content="2022-12-03T14:24:18.559Z">
+<meta property="article:author" content="2hYan9">
+<meta property="article:tag" content="binary analysis">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://2hyan9.github.io/2022/10/13/syscall-notes/image/Linux_syscall.png">
+  
+  
+  
+  <title>syscall_notes - TheFuture1sNow</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"2hyan9.github.io","root":"/","version":"1.9.3","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"left","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>2hYan9</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="syscall_notes"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-10-13 15:44" pubdate>
+          2022年10月13日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          4.2k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          35 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="padding-left: 2rem; margin-right: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">syscall_notes</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="Syscall-Notes">Syscall Notes</h2>
+<p>在计算机中，系统调用是一种编程方式，计算机程序通过该方式向操作系统的内核请求服务。系统调用是一种计算机程序与操作系统互动的方式：计算机程序通过系统调用向操作系统内核请求服务，而系统调用则会通过API(Application Program Interface)向用户程序提供操作系统的服务。</p>
+<p>系统调用提供了进程和操作系统之间的接口，以允许用户级进程请求操作系统的服务。系统调用是内核系统的唯一入口点， 所有需要资源的程序都必须通过系统调用获取相应资源。</p>
+<h3 id="关于中断">关于中断</h3>
+<p>ref. 《汇编语言》(第4版，王爽著)</p>
+<p><em>任何一种通用的CPU都必须具备一种能力，即可以在执行完当前正在执行的指令之后，检测到从CPU外部发送过来的或内部产生的一种特殊信息，并且可以立即对所接收到的信息进行处理</em>。</p>
+<p>这种特殊的信息就是所谓的中断(Interrupt, sometimes refered to as trap)信息，<u>中断信息会使CPU不再继续从刚执行完的指令向下执行，而是转而去处理这个特殊的信息</u>。中断信息会要求CPU马上进行某种处理，并向所要进行的该种处理提供了必备的参数的通知信息。</p>
+<p>中断信息可以来自CPU的内部或者外部，来自CPU内部的中断信息通常被称为<strong>内中断</strong>，来自CPU外部（外设，比如键盘）的中断信息通常被称为<strong>外中断</strong>，这里主要介绍内中断。</p>
+<h4 id="内中断的产生">内中断的产生</h4>
+<p>CPU一般会在下面几种情况下产生内中断：</p>
+<ol>
+<li>除法错误</li>
+<li>单步执行</li>
+<li>执行into指令</li>
+<li>执行int指令</li>
+</ol>
+<p>在讨论各种中断的具体含义之前，需要先了解中断信息是如何让CPU区分不同的类型的中断信息的。</p>
+<p>CPU首先需要知道的是所接收到的中断信息的来源，即中断源，因此中断信息中必须包含识别来源的编码。一般使用中断类型码来标识中断信息的来源。</p>
+<p>比如在8086CPU中，上面中断来源在中断类型码为：除法错误：0；单步执行：1；执行into指令：4；执行int指令，int指令的格式为 int n，其中n为一个立即数，就是提供给CPU的中断类型码。</p>
+<h4 id="中断向量表">中断向量表</h4>
+<p>除了中断源，CPU还需要知道如何处理中断，而这由中断处理程序决定，也就是让CPU接收到中断信息后转而去执行该中断信息对应的中断处理程序。</p>
+<p>因此CPU需要某种方式获取到对应中断处理程序的入口地址。而<u>中断向量表就是为了让CPU知道各种中断处理程序的入口地址</u>。所谓<strong>中断向量其实就是中断处理程序的入口地址，中断向量表中存储了各类中断信息所对应的中断向量</strong>。</p>
+<p>中断向量表通常位于内存中的某个预定的位置，比如在8086CPU中，中断向量表指定放在内存地址0处，从内存0000:0000到0000:03FF 的1024个单元中存放这中断向量表。</p>
+<p>所以，CPU在接收到中断信息后，会根据中断类型码找到该中断的中断向量，并设置程序计数器到该中断向量，从而处理该中断。</p>
+<h4 id="中断过程">中断过程</h4>
+<p>在CPU执行完中断处理程序后，需要返回到原来的地址继续执行，所以在中断过程中设置程序计数器之前，还需要将程序计数器原来的值保存起来。</p>
+<p>比如在8086CPU中，CPU收到中断信息后，所引发的中断过程如下：</p>
+<ol>
+<li>从中断信息中读取中断类型码</li>
+<li>将标志寄存器入栈，因为下一步就要修改标志寄存器的值，所以这里需要先保存原来的值</li>
+<li>设置标志寄存器的第8位TF和第9位IF的值为0</li>
+<li>保存当前程序计数器的值</li>
+<li>从中断向量表中读取该类型中断对应的中断向量，并设置程序计数器的值为该中断向量</li>
+</ol>
+<p>从中断处理程序回到原来执行的地址则需要使用<code>iret</code>指令，该指令的功能用汇编语法描述为：<code>pop PC; pop flag</code>，也就是恢复程序计数器，然后恢复标志寄存器原来的值。</p>
+<h3 id="Linux系统调用">Linux系统调用</h3>
+<p>ref. <a target="_blank" rel="noopener" href="https://linux-kernel-labs.github.io/refs/heads/master/index.html">linux kernel labs</a></p>
+<p>类似于函数库中的API，系统调用是内核向高层(high level)用户应用提供的服务。</p>
+<p><img src="./image/Linux_syscall.png" srcset="/img/loading.gif" lazyload alt="linux_syscall"></p>
+<p>然后，实际上系统调用与常规的函数调用有很大的区别，系统调用是用于完成下列任务的特定的汇编指令：</p>
+<ul>
+<li>设置相关信息以识别系统调用以及参数</li>
+<li>触发内核模式的切换</li>
+<li>收集系统调用执行的结果</li>
+</ul>
+<p>在Linux上，系统调用由系统调用号进行识别，系统调用最多只能接受6个参数。系统调用号和系统调用的参数都是通过指定的寄存器进行传递。</p>
+<p>比如在X64的机器上，RAX用于传递系统调用号，而系统调用的6个参数从左到右则分别由%rdi, %rsi, %rdx, %r10, %r8, %r9这几个寄存器进行传递。</p>
+<p>系统函数库(e.g.: libc)提供了一些实现系统调用的函数，从而使用户应用能够更方便地使用系统调用。</p>
+<p>当发生用户到内核模式的转换时，用户应用执行流程将会被中断并被转移到内核入口点。系统调用入口点将寄存器（其中包含来自用户空间的值，包括系统调用号和系统调用参数）保存在堆栈上，然后继续执行系统调用调度程序(system call dispatcher)。</p>
+<p><img src="./image/syscall_control_flow.png" srcset="/img/loading.gif" lazyload alt="syscall_control_flow"></p>
+<p>系统调用调度程序所完成的任务主要是检查系统调用号，然后调用对应的内核函数。下面的代码演示了系统调用掉程序的工作：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-comment">/* Handles int $0x80 */</span><br>__visible <span class="hljs-type">void</span> <span class="hljs-title function_">do_int80_syscall_32</span><span class="hljs-params">(<span class="hljs-keyword">struct</span> pt_regs *regs)</span><br>&#123;<br>    enter_from_user_mode();<br>    local_irq_enable();<br>    do_syscall_32_irqs_on(regs);<br>&#125;<br><br><span class="hljs-comment">/* simplified version of the Linux x86 32bit System Call Dispatcher */</span><br><span class="hljs-type">static</span> __always_inline <span class="hljs-type">void</span> <span class="hljs-title function_">do_syscall_32_irqs_on</span><span class="hljs-params">(<span class="hljs-keyword">struct</span> pt_regs *regs)</span><br>&#123;<br>    <span class="hljs-type">unsigned</span> <span class="hljs-type">int</span> nr = regs-&gt;orig_ax;<br><br>    <span class="hljs-keyword">if</span> (nr &lt; IA32_NR_syscalls)<br>        regs-&gt;ax = ia32_sys_call_table[nr](regs-&gt;bx, regs-&gt;cx,<br>                                           regs-&gt;dx, regs-&gt;si,<br>                                           regs-&gt;di, regs-&gt;bp);<br>    syscall_return_slowpath(regs);<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>在X86 32bit的机器上，系统调用号使用EAX寄存器传递，而系统调用的6个参数则分别通过EBX, ECX, EDX, ESI, EDI, EBP寄存器传递。</p>
+<p>系统调用表就是系统调用调度器用以将系统调用号映射到内核函数的工具。</p>
+<p>下面的代码演示了系统调用表的原理：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-meta">#<span class="hljs-keyword">define</span> __SYSCALL_I386(nr, sym, qual) [nr] = sym,</span><br><br><span class="hljs-type">const</span> <span class="hljs-type">sys_call_ptr_t</span> ia32_sys_call_table[] = &#123;<br>  [<span class="hljs-number">0</span> ... __NR_syscall_compat_max] = &amp;sys_ni_syscall,<br>  <span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;asm/syscalls_32.h&gt;</span></span><br>&#125;;<br><br><span class="hljs-comment">// some system calls</span><br>__SYSCALL_I386(<span class="hljs-number">0</span>, sys_restart_syscall, )<br>__SYSCALL_I386(<span class="hljs-number">1</span>, sys_exit, )<br><span class="hljs-meta">#<span class="hljs-keyword">ifdef</span> CONFIG_X86_32</span><br>__SYSCALL_I386(<span class="hljs-number">2</span>, sys_fork, )<br><span class="hljs-meta">#<span class="hljs-keyword">else</span></span><br>__SYSCALL_I386(<span class="hljs-number">2</span>, sys_fork, )<br><span class="hljs-meta">#<span class="hljs-keyword">endif</span></span><br>__SYSCALL_I386(<span class="hljs-number">3</span>, sys_read, )<br>__SYSCALL_I386(<span class="hljs-number">4</span>, sys_write, )<br></code></pre></td></tr></table></figure>
+<p>内核在执行系统调用对应的内核函数时，需要对用户传递来的参数进行处理。因为这些参数都是从用户空间传递过来的，内核无法假设这些参数的正确性，所以必须对其进行彻底的验证。</p>
+<p>参数的验证是有必要的，因为系统调用是在内核模式下执行的，所以系统调用在执行期间是能够访问内核空间的，比如对于参数中的指针，必须检查下面两种情况：</p>
+<ul>
+<li>不允许指向内核空间的指针</li>
+<li>检查指针是否是有效的</li>
+</ul>
+<p>这里之所以不能允许用户应用传递指向内核空间的指针作为参数，是因为内核模式下执行的系统调用接受这样的参数可能会导致意料之外的错误。</p>
+<p>比如，用户应用调用一个read()或者write()系统调用，如果传递的指针是指向内核空间的，那么系统调用的执行可能会read()系统调用读取一个文件后对内核空间的内存造成污染。</p>
+<p>同样的，如果用户应用传递的指针是无效的，也就是未映射的，或者对只读区域进行写操作，那么会导致内核崩溃。</p>
+<h4 id="Virtual-Dynamic-Shared-Object-VDSO">Virtual Dynamic Shared Object(VDSO)</h4>
+<p>这项技术是为了对部分系统调用进行加速，具体做法是内核会生成一段用于启动系统调用的指令，这些指令会被格式化为ELF共享目标，并映射到用户空间结束的地址。libc在需要调用系统调用时，将会从VDSO中搜索相关系统调用，并使用其中的指令启动系统调用。</p>
+<p>VDSO技术包含虚拟系统调用(Virtual System Call, vsyscalls)，之所以称其为虚拟系统调用是因为这些虚拟系统调用能够直接在用户空间运行。vsyscall也是VDSO中的一部分，它们能够从VDSO的内存页中访问数据，这些数据要么是静态的，要么是由内核在VDSO内存区域中的单独的读写映射区域(separate read-write map)中修改的。</p>
+<p>通常使用/proc/self/map文件读取到的目标进程的内存映射中，除了目标进程对应的二进制文件的映射区域，堆区域，栈区域以及目标进程所依赖的共享目标的映射区域以外，还包含另外三个额外的区域: “vdso”, “vsyscall”, “vvar”，如下：</p>
+<p><img src="./image/process_maps.png" srcset="/img/loading.gif" lazyload alt="process_maps"></p>
+<p>这三个额外的区域就是为了VDSO技术是映射的内存区域，其中&quot;vdso&quot;就是前面提到的由内核生成的用于启动系统调用的指令，被格式化为ELF共享目标，和普通的代码段一样，执行权限是&quot;RX&quot;。“vsyscall&quot;就是虚拟系统调用所使用的内存映射区域，可以看到这块区域的执行权限是&quot;X”，也就是用户应用无法直接访问这块区域，但是这块区域中存放着可执行的代码，&quot;vvar&quot;就是vsyscall与VDSO进行数据交互所使用的内存映射区域，执行权限为只读的。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/notes/" class="category-chain-item">notes</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/binary-analysis/">#binary analysis</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>syscall_notes</div>
+      <div>https://2hyan9.github.io/2022/10/13/syscall-notes/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>2hYan9</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2022年10月13日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2022/10/14/simpleperf-notes/" title="simpleperf_notes">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">simpleperf_notes</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/10/12/gdb-usage/" title="gdb_usage">
+                        <span class="hidden-mobile">gdb_usage</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

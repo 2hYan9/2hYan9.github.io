@@ -1,0 +1,745 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="2hYan9">
+  <meta name="keywords" content="some notes">
+  
+    <meta name="description" content="SimplePerf Notes 这个博客是在学习使用SimplePerf来监视测试机在运行测试程序时的访存请求总数以及缓存缺失数时所记录的笔记。 SimplePerf是一种CPU分析器(Profiler)，可以用于监测测试程序运行时的性能数据，而本人需要使用测试机的实测缓存访问结果来验证缓存仿真器的仿真结果。这个博客将会记录SimplePerf的基本用法以及一些底层的原理。 在将SimplePe">
+<meta property="og:type" content="article">
+<meta property="og:title" content="simpleperf_notes">
+<meta property="og:url" content="https://2hyan9.github.io/2022/10/14/simpleperf-notes/index.html">
+<meta property="og:site_name" content="TheFuture1sNow">
+<meta property="og:description" content="SimplePerf Notes 这个博客是在学习使用SimplePerf来监视测试机在运行测试程序时的访存请求总数以及缓存缺失数时所记录的笔记。 SimplePerf是一种CPU分析器(Profiler)，可以用于监测测试程序运行时的性能数据，而本人需要使用测试机的实测缓存访问结果来验证缓存仿真器的仿真结果。这个博客将会记录SimplePerf的基本用法以及一些底层的原理。 在将SimplePe">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://2hyan9.github.io/2022/10/14/simpleperf-notes/image/how_simpleperf_works.png">
+<meta property="og:image" content="https://2hyan9.github.io/2022/10/14/simpleperf-notes/image/simpleperf_stat.png">
+<meta property="og:image" content="https://2hyan9.github.io/2022/10/14/simpleperf-notes/image/simpleperf_record.png">
+<meta property="article:published_time" content="2022-10-14T06:33:13.000Z">
+<meta property="article:modified_time" content="2022-10-18T12:28:37.689Z">
+<meta property="article:author" content="2hYan9">
+<meta property="article:tag" content="quantitative analysis">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://2hyan9.github.io/2022/10/14/simpleperf-notes/image/how_simpleperf_works.png">
+  
+  
+  
+  <title>simpleperf_notes - TheFuture1sNow</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"2hyan9.github.io","root":"/","version":"1.9.3","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"left","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>2hYan9</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="simpleperf_notes"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-10-14 14:33" pubdate>
+          2022年10月14日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          4.2k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          35 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="padding-left: 2rem; margin-right: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">simpleperf_notes</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="SimplePerf-Notes">SimplePerf Notes</h2>
+<p>这个博客是在学习使用SimplePerf来监视测试机在运行测试程序时的访存请求总数以及缓存缺失数时所记录的笔记。</p>
+<p>SimplePerf是一种CPU分析器(Profiler)，可以用于监测测试程序运行时的性能数据，而本人需要使用测试机的实测缓存访问结果来验证缓存仿真器的仿真结果。这个博客将会记录SimplePerf的基本用法以及一些底层的原理。</p>
+<p>在将SimplePerf的统计结果与缓存仿真器的仿真结果进行比对已验证缓存仿真器的可靠性之前，需要验证一点，或者说必须确保的是，也就是SimplePerf的结果确实是实测所得的结果，体现在下面几个方面：</p>
+<ul>
+<li>SimplePerf工具本身是没有问题的？</li>
+<li>SimplePerf的用法是没有问题的？</li>
+<li>SimplePerf的结果统计分析过程是没有问题的？也就是对SimplePerf的输出结果的解释是准确的？</li>
+</ul>
+<p>这个博客所记录的问题就是为了确保上面几点是能够成立的。</p>
+<h3 id="PMU">PMU</h3>
+<p>SimplePerf需要PMU(Performance Monitor Unit)的支持，本人所使用的测试机处理器型号为Cortex A75，因此这里所记录的PMU相关内容是Cortex A75处理器中的PMU相关内容。</p>
+<p>这部分的内容参考自ARM手册。</p>
+<p>处理器中的PMU能够允许用户收集到各种运行时的内核(Core)以及内存系统相关的操作统计信息，PMU中包含六个计数器，每个计数器能够用于统计处理器中已有的任何事件相关的统计信息。由于管道效应，记录的绝对计数可能会有所不同，除了在很短的时间内启动计数器的情况外，这个问题的所带来的影响是可以忽略的。</p>
+<p>PMU中包含下面的接口与计数器：</p>
+<ul>
+<li>Event Interface: 来自整个处理器设计中的其他单元向PMU提供的事件接口</li>
+<li>System register and APB interface: 可以使用系统寄存器或外部 APB 接口对 PMU 寄存器进行编程</li>
+<li>Counters: 32-bit 的事件寄存器，这些事件寄存器会在根据事件递增，此外还有一个64-bit 的时钟寄存器</li>
+<li>PMU register interface: Cortex A57支持从内部系统寄存器接口和内存映射接口访问PMU寄存器</li>
+</ul>
+<p>这里介绍几个本人需要使用得到的PMU事件，完整的事件列表可以在<a target="_blank" rel="noopener" href="https://developer.arm.com/documentation/100403/0301/debug-descriptions/performance-monitor-unit/pmu-events?lang=en">PMU Events</a>中找到：</p>
+<ol>
+<li>
+<p>SW_INCR: 体系架构已执行的指令，也就是条件检查已通过的指令总数</p>
+</li>
+<li>
+<p>L1D_CACHE: L1data cache的访问总数，这个事件会对L1 data cache的读，写以及<strong>预取</strong>请求进行计数，这<em>包括尚未具有可缓存性属性的不可缓存推测性读取</em></p>
+</li>
+<li>
+<p>L1D_CACHE_REFILL: L1 data cache重填充次数，这个事件会记录所有对L1 数据缓存的缓存分配，这包括读取行填充(linefill)，存储(store)行填充，以及预取行填充</p>
+<p>重填充(refill)计数器：会将所有导致重填充的内存读取或者写入操作进行计数，这些请求会导致L1数据缓存从下面的位置重新填充：另一块L1数据缓存、L2缓存以及任何其他级别的缓存或者主存，换句话说，也就是L1数据访问所导致的缺失。</p>
+</li>
+<li>
+<p>L1D_CACHE_REFILL_INNER: 计数器对造成L1D_CACHE_REFILL的每个访问进行计数，这些访问导致缓存通过直接集群内部的另一个缓存传输来实现重填充</p>
+</li>
+<li>
+<p>L1D_CACHE_REFILL_OUTER: 计数器对造成L1D_CACHE_REFILL的每个访问进行计数，这些访问导致缓存通过直接集群外部的另一个缓存传输来实现重填充</p>
+</li>
+</ol>
+<p>需要注意的是，这里的内部和外部之间的边界是由具体实现所定义的，不一定和其他类似的边界有关联，比如inner cacheable和outer cacheable的边界。</p>
+<h4 id="Cache-controller">Cache controller</h4>
+<p>在ARM Cortex-A系列的处理器中，包含一个缓存控制器(Cache Controller)的硬件模块，这个硬件模块对于应用程序是不可见的。缓存控制器会自动将代码或者数据从主存写入到缓存中。缓存控制器会接受来自处理器内核的内存读写请求然后对缓存或者外部内存执行必要的操作。</p>
+<p><em>在缓存控制器执行操作之前，需要先确认访存请求的地址是否是可缓存的(Cacheable)</em>，只有当访存请求的地址被标记为可缓存的，缓存控制器才会执行缓存查找(Cache lookup)的操作。</p>
+<p>缓存查找就是检查是否能够在缓存中找到这个请求的地址，缓存查找的具体方法是通过比对请求地址中的某一部分比特与缓存中行相关联的tag值，如果能够匹配，并且缓存行被标记为有效的，则缓存命中，那么读写请求都在缓存中进行。</p>
+<p>如果在缓存中没有找到与请求地址相匹配的tag，或者对应的缓存行是无效的，则缓存缺失，缓存缺失会导致这个请求进一步传递到存储层次结构中的下一级，比如L2缓存或者外部内存。缓存缺失也会导致一个<strong>缓存行填充</strong>(cache linefill)，缓存行填充会导致将一块主内存的内容复制到缓存中。同时，请求的数据或指令被流式传输到内核(streamed to the core)。同样的，缓存行填充的过程对于应用程序是透明的。</p>
+<p>需要注意的是，在缓存行填充的过程中，<strong>处理器内核并不需要等到数据被写入到缓存后，也就是缓存行填充执行完成后，才能使用数据</strong>。缓存控制器通常会首先访问缓存行内的关键字(critical word)。比如现在要加载一条指令，而这个读指令的请求导致了缓存缺失，并从而导致缓存行填充，处理器内核会首先会检查缓存行中包含请求数据的那部分，然后关键字会被直接供应到处理器内核流水线，而缓存硬件和外部总线接口随后在后台读取缓存行的其余部分。</p>
+<h3 id="SimplePerf">SimplePerf</h3>
+<p>SimplePerf是安卓对于Linux中的Perf工具的替代品，这个工具需要linux内核支持和PMU的硬件支持。</p>
+<p>SimplePerf的整体框架如下图所示：4</p>
+<p><img src="./image/how_simpleperf_works.png" srcset="/img/loading.gif" lazyload alt="how_simpleperf_works"></p>
+<p>前面已经讨论过了SimplePerf的PMU硬件支持，所以这里将会对SimplePerf的内核支持进行介绍。</p>
+<p>在操作系统内核中使用Perf事件驱动(perf event driver)来桥接用户空间与PMU驱动器(pmu drivers)。Perf事件驱动的主要功能是将PMU事件映射到Perf事件类型，然后向用户空间提供一个接口以罗列当前可支持的Perf事件，以及监视已选线程性能的系统调用(“perf_event_open()”)。</p>
+<p>PMU驱动器需要在Perf事件驱动器中进行注册，包含下面几种PMU驱动器：</p>
+<ul>
+<li>CPU PMU驱动器：该驱动器用于操作PMU硬件设备，位于/drivers/perf目录下</li>
+<li>软件PMU驱动器：用以统计CPU时钟，内存页错误之类的事件</li>
+<li>tracepoint PMU驱动器：用以统计类似sched:sched_switch之类的事件</li>
+<li>设备特定的PMU驱动器</li>
+</ul>
+<p>对于用户空间，SimplePerf将其功能划分为子命令(Subcommands)：</p>
+<ul>
+<li>list command: 用以列举设备上可用的Perf事件</li>
+<li>stat command: 监视线程，然后打印事件计数器的值</li>
+<li>record command: 监视线程，然后使用采样生成分析数据(profile data)文件，这个文件命名为perf.data，无法直接查看文件的内容</li>
+<li>report command: 报告由record命令生成的分析数据文件</li>
+</ul>
+<p>SimplePerf中的stat命令执行原理如下如所示：</p>
+<p><img src="./image/simpleperf_stat.png" srcset="/img/loading.gif" lazyload alt="simpleperf_stat"></p>
+<p>从上图可以看到，SimplePerf会根据stat命令的参数调用perf_event_open()系统调用来监视执行的线程以及perf事件，随后内核将会启动相应事件的计数器，等到统计的时间结束后，SimplePerf可以读取相应perf事件文件描述符(perf event file descriptors)的计数器的值。</p>
+<p>SimplePerf中另一个比较常用的命令是record，record命令能够提供更加详细的分析数据，所以这个命令相较于stat命令也更加复杂，下图是record命令的执行原理：</p>
+<p><img src="./image/simpleperf_record.png" srcset="/img/loading.gif" lazyload alt="simpleperf_record"></p>
+<p>同样的，SimplePerf首先会根据record命令的参数调用perf_event_open()系统调用来监视执行的线程以及perf事件，随后内核将启动相应的事件计数器，与stat不同的是，此时SimplePerf中会调用mmap()函数来创建一个与内核共享的循环缓冲区，从而避免因为计数寄存器溢出而导致的数据丢失。当事件计数器产生溢出后，创建一个采样record，然后将其放入到循环缓冲区中。最后，SimplePerf中使用多线程的方式来读取结果：使用read record线程从循环缓冲区中读取采样record，然后将读取到的结果传递给主线程，而在主线程中手机辅助信息，并将最终的结果写入到分析数据文件中。</p>
+<p>record命令可以使用的选项，这里只记录了一些常用的选项：</p>
+<ol>
+<li>
+<p>‘-p pid1,pid2,…’：记录已存在的进程的perf事件</p>
+</li>
+<li>
+<p>‘-t tid1,tid2,…’：记录已存在的线程的perf事件</p>
+</li>
+<li>
+<p>-a：记录全系统的perf事件</p>
+</li>
+<li>
+<p>–cpu cpu_item1,cpu_item2,…：只记录已选择的CPU上的相关信息，这个选项的参数是十进制，从0开始编号。</p>
+<p>这里需要注意与taskset的差别，taskset锁核命令所接受的参数是16进制，参数的每一位代表一个核。</p>
+</li>
+<li>
+<p>-e event1[:modifier1],event2[:modifier2],…：选择需要统计的perf事件，modifier有两种可选项：</p>
+<ol>
+<li>u - 只监视用户空间的事件</li>
+<li>k - 只监视内核空间的事件</li>
+</ol>
+</li>
+</ol>
+<p>在使用事件修饰符时，需要注意的一点是，对于同一个事件，如果只统计该事件用户空间的计数器，那么report的结果中会将内核部分的占比标记为unknown；如果同时统计该事件用户空间和内核空间的计数器，那么report的结果中会将内核部分的占比标记出来，通常内核部分的占比所属的shared object字段使用方括号进行标记。</p>
+<p>执行完record命令后，SimplePerf将会生成分析数据文件，这个文件无法直接读取，需要使用report命令来解析这个文件中的统计数据。</p>
+<p>如果想要了解每个子命令可接受的选项的话，可以使用 ‘simpleperf help (subcommands)’ 来查看该子命令所有可接受的选项。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/notes/" class="category-chain-item">notes</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/quantitative-analysis/">#quantitative analysis</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>simpleperf_notes</div>
+      <div>https://2hyan9.github.io/2022/10/14/simpleperf-notes/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>2hYan9</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2022年10月14日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2022/10/14/DynamoRIO-Tutorial/" title="DynamoRIO Tutorial">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">DynamoRIO Tutorial</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/10/13/syscall-notes/" title="syscall_notes">
+                        <span class="hidden-mobile">syscall_notes</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

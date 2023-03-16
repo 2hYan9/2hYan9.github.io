@@ -1,0 +1,716 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="2hYan9">
+  <meta name="keywords" content="some notes">
+  
+    <meta name="description" content="二进制加壳与脱壳 通常恶意软件作者为了避免恶意软件被二进制分析或者逆向研究，会对恶意软件进行加壳保护。  这部分的复现实验出了点问题，暂时搁置。  简单来讲，加壳就是将原来的可执行文件进行压缩或者加密，然后放在另一个可执行文件的数据段中，这个新的可执行文件将会在运行时对原来的可执行文件进行解压缩或者解密，这些操作都是在内存中进行的。然后再将其映射到内存中执行，整个过程都不会在磁盘上写入数据，所以也">
+<meta property="og:type" content="article">
+<meta property="og:title" content="二进制加壳与脱壳">
+<meta property="og:url" content="https://2hyan9.github.io/2022/12/06/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%8A%A0%E5%A3%B3%E4%B8%8E%E8%84%B1%E5%A3%B3/index.html">
+<meta property="og:site_name" content="TheFuture1sNow">
+<meta property="og:description" content="二进制加壳与脱壳 通常恶意软件作者为了避免恶意软件被二进制分析或者逆向研究，会对恶意软件进行加壳保护。  这部分的复现实验出了点问题，暂时搁置。  简单来讲，加壳就是将原来的可执行文件进行压缩或者加密，然后放在另一个可执行文件的数据段中，这个新的可执行文件将会在运行时对原来的可执行文件进行解压缩或者解密，这些操作都是在内存中进行的。然后再将其映射到内存中执行，整个过程都不会在磁盘上写入数据，所以也">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://2hyan9.github.io/2022/12/06/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%8A%A0%E5%A3%B3%E4%B8%8E%E8%84%B1%E5%A3%B3/image/protected_binary.png">
+<meta property="og:image" content="https://2hyan9.github.io/2022/12/06/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%8A%A0%E5%A3%B3%E4%B8%8E%E8%84%B1%E5%A3%B3/image/inscount.png">
+<meta property="og:image" content="https://2hyan9.github.io/2022/12/06/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%8A%A0%E5%A3%B3%E4%B8%8E%E8%84%B1%E5%A3%B3/image/packed_file.png">
+<meta property="og:image" content="https://2hyan9.github.io/2022/12/06/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%8A%A0%E5%A3%B3%E4%B8%8E%E8%84%B1%E5%A3%B3/image/jump_instruction.png">
+<meta property="og:image" content="https://2hyan9.github.io/2022/12/06/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%8A%A0%E5%A3%B3%E4%B8%8E%E8%84%B1%E5%A3%B3/image/unpack_result.png">
+<meta property="article:published_time" content="2022-12-06T11:13:16.000Z">
+<meta property="article:modified_time" content="2023-01-08T12:06:02.000Z">
+<meta property="article:author" content="2hYan9">
+<meta property="article:tag" content="binary analysis">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://2hyan9.github.io/2022/12/06/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%8A%A0%E5%A3%B3%E4%B8%8E%E8%84%B1%E5%A3%B3/image/protected_binary.png">
+  
+  
+  
+  <title>二进制加壳与脱壳 - TheFuture1sNow</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"2hyan9.github.io","root":"/","version":"1.9.3","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"left","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>2hYan9</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="二进制加壳与脱壳"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-12-06 19:13" pubdate>
+          2022年12月6日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          7.9k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          66 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="padding-left: 2rem; margin-right: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">二进制加壳与脱壳</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="二进制加壳与脱壳">二进制加壳与脱壳</h2>
+<p>通常恶意软件作者为了避免恶意软件被二进制分析或者逆向研究，会对恶意软件进行加壳保护。</p>
+<blockquote>
+<p>这部分的复现实验出了点问题，暂时搁置。</p>
+</blockquote>
+<p>简单来讲，加壳就是将原来的可执行文件进行压缩或者加密，然后放在另一个可执行文件的数据段中，这个新的可执行文件将会在运行时对原来的可执行文件进行解压缩或者解密，这些操作都是在内存中进行的。然后再将其映射到内存中执行，整个过程都不会在磁盘上写入数据，所以也就无法被静态分析。</p>
+<p>如下图所示：</p>
+<p><img src="./image/protected_binary.png" srcset="/img/loading.gif" lazyload alt="protected_binary"></p>
+<p>虽然无法通过静态的方法分析原来的二进制文件，但是可以使用动态的方法进行分析。</p>
+<p>注意到加壳后的可执行文件会先在内存中对原来的二进制文件进行解压或者解密后，再将其映射到内存并将控制权转移到二进制文件原来的入口点(Original Entry Point)。</p>
+<p>因此，我们可以在加壳后的可执行文件运行时跟踪其内存读写的操作，进而获取到原来的二进制文件，然后再进一步进行二进制分析。</p>
+<p>想要在程序运行时动态跟踪其内存读写操作，需要使用动态二进制插桩(Dynamic Binary Instrumentation, DBI)技术。</p>
+<h3 id="如何使用Pin">如何使用Pin</h3>
+<p>整个文档将会介绍使用动态二进制插桩平台(DBI Platform) Pin进行一个自动脱壳的实验。</p>
+<p>Pin工具文档：<a target="_blank" rel="noopener" href="https://software.intel.com/sites/landingpage/pintool/docs/98650/Pin/doc/html/index.html">Pin: Pin 3.25 User Guide</a></p>
+<p>如果想要了解更多关于二进制插桩的内容，可以参考博客</p>
+<p><a href="https://2hyan9.github.io/2022/10/14/DynamoRIO-Tutorial/">DynamoRIO Tutorial</a></p>
+<p>这篇博客介绍了DynamoRIO的使用方法，DynamoRIO和Pin一样是动态二进制插桩平台，它们的原理基本都是一样的，只是实现细节和优化方法存在差异。</p>
+<p>和DynamoRIO一样，用户在定义DBI工具(client in DynamoRIO, pintools in Pin)时主要定义两部分代码：</p>
+<ol>
+<li>插桩代码：决定在什么地方插入什么代码</li>
+<li>分析代码：在插入点执行的代码</li>
+</ol>
+<p>Pin支持多种细粒度的二进制插桩：</p>
+<ul>
+<li>
+<p>指令插桩：一次仅对二进制文件的一条指令进行检查并插桩，使用&quot;INS_AddInstrumentFunction()&quot;进行注册</p>
+</li>
+<li>
+<p>基本块插桩：对一个基本块进行插桩，也就是为一次对一个基本块调用一次分析函数，使用&quot;TRACE_AddInstrumentFunction()&quot;进行注册。</p>
+<p>Pin中并不能直接对基本块进行插桩，如果要对基本块插桩，就需要使用Trace插桩粒度，然后遍历Trace中的基本块进行分析和插桩</p>
+</li>
+<li>
+<p>函数插桩：当可执行文件首次加载函数时，能够在DBI工具中检查并插桩整个函数的指令，使用&quot;RTN_AddInstrumentFunction()&quot;进行注册</p>
+</li>
+<li>
+<p>IMAGE插桩：DBI工具在一个整个镜像(Image, an entire executable or library)首次被加载到内存时，对其进行检查并插桩，使用&quot;IMG_AddInstrumentFunction()&quot;进行注册</p>
+</li>
+</ul>
+<p>下面将使用一个简单的例子介绍如何使用Pin搭建DBI工具。</p>
+<p>这个例子是官方文档中的例子，对一个程序所执行的指令进行计数。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-comment">/*</span><br><span class="hljs-comment"> * Copyright (C) 2004-2021 Intel Corporation.</span><br><span class="hljs-comment"> * SPDX-License-Identifier: MIT</span><br><span class="hljs-comment"> */</span><br> <br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;iostream&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;fstream&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;pin.H&quot;</span></span><br><span class="hljs-keyword">using</span> std::cerr;<br><span class="hljs-keyword">using</span> std::endl;<br><span class="hljs-keyword">using</span> std::ios;<br><span class="hljs-keyword">using</span> std::ofstream;<br><span class="hljs-keyword">using</span> std::string;<br> <br>ofstream OutFile;<br> <br><span class="hljs-comment">// The running count of instructions is kept here</span><br><span class="hljs-comment">// make it static to help the compiler optimize docount</span><br><span class="hljs-type">static</span> UINT64 icount = <span class="hljs-number">0</span>;<br> <br><span class="hljs-comment">// This function is called before every instruction is executed</span><br><span class="hljs-function">VOID <span class="hljs-title">docount</span><span class="hljs-params">()</span> </span>&#123; icount++; &#125;<br> <br><span class="hljs-comment">// Pin calls this function every time a new instruction is encountered</span><br><span class="hljs-function">VOID <span class="hljs-title">Instruction</span><span class="hljs-params">(INS ins, VOID* v)</span></span><br><span class="hljs-function"></span>&#123;<br>    <span class="hljs-comment">// Insert a call to docount before every instruction, no arguments are passed</span><br>    <span class="hljs-built_in">INS_InsertCall</span>(ins, IPOINT_BEFORE, (AFUNPTR)docount, IARG_END);<br>&#125;<br> <br><span class="hljs-function">KNOB&lt; string &gt; <span class="hljs-title">KnobOutputFile</span><span class="hljs-params">(KNOB_MODE_WRITEONCE, <span class="hljs-string">&quot;pintool&quot;</span>, <span class="hljs-string">&quot;o&quot;</span>, <span class="hljs-string">&quot;inscount.out&quot;</span>, <span class="hljs-string">&quot;specify output file name&quot;</span>)</span></span>;<br> <br><span class="hljs-comment">// This function is called when the application exits</span><br><span class="hljs-function">VOID <span class="hljs-title">Fini</span><span class="hljs-params">(INT32 code, VOID* v)</span></span><br><span class="hljs-function"></span>&#123;<br>    <span class="hljs-comment">// Write to a file since cout and cerr maybe closed by the application</span><br>    OutFile.<span class="hljs-built_in">setf</span>(ios::showbase);<br>    OutFile &lt;&lt; <span class="hljs-string">&quot;Count &quot;</span> &lt;&lt; icount &lt;&lt; endl;<br>    OutFile.<span class="hljs-built_in">close</span>();<br>&#125;<br><br><span class="hljs-function">INT32 <span class="hljs-title">Usage</span><span class="hljs-params">()</span></span><br><span class="hljs-function"></span>&#123;<br>    cerr &lt;&lt; <span class="hljs-string">&quot;This tool counts the number of dynamic instructions executed&quot;</span> &lt;&lt; endl;<br>    cerr &lt;&lt; endl &lt;&lt; KNOB_BASE::<span class="hljs-built_in">StringKnobSummary</span>() &lt;&lt; endl;<br>    <span class="hljs-keyword">return</span> <span class="hljs-number">-1</span>;<br>&#125;<br> <br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">main</span><span class="hljs-params">(<span class="hljs-type">int</span> argc, <span class="hljs-type">char</span>* argv[])</span></span><br><span class="hljs-function"></span>&#123;<br>    <span class="hljs-comment">// Initialize pin</span><br>    <span class="hljs-keyword">if</span> (<span class="hljs-built_in">PIN_Init</span>(argc, argv)) <span class="hljs-keyword">return</span> <span class="hljs-built_in">Usage</span>();<br> <br>    OutFile.<span class="hljs-built_in">open</span>(KnobOutputFile.<span class="hljs-built_in">Value</span>().<span class="hljs-built_in">c_str</span>());<br> <br>    <span class="hljs-comment">// Register Instruction to be called to instrument instructions</span><br>    <span class="hljs-built_in">INS_AddInstrumentFunction</span>(Instruction, <span class="hljs-number">0</span>);<br> <br>    <span class="hljs-comment">// Register Fini to be called when the application exits</span><br>    <span class="hljs-built_in">PIN_AddFiniFunction</span>(Fini, <span class="hljs-number">0</span>);<br> <br>    <span class="hljs-comment">// Start the program, never returns</span><br>    <span class="hljs-built_in">PIN_StartProgram</span>();<br> <br>    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>首先需要介绍一下Pin中的Knob机制，这个机制允许用户定义的pintool添加一些命令行参数选项，比如在上面的例子中，就使用KNOB机制添加了一个输出文件名称的选项，使用-o选项指定输出文件名称。</p>
+<p>上面例子中演示的pintool的主函数中就是先进行初始化(“PIN_Init()”)，开启输出文件，注册指令级插桩函数，注册用于运行结束时进行输出的终止函数(“PIN_AddFiniFunction()”)，然后启动目标函数(“PIN_StartProgram()”)。</p>
+<p>如果想要了解Pin提供的这些接口的详细用法，可以在官网文档上找到。</p>
+<p>这里定义的插桩过程比较简单，仅仅只是在每条指令之前插入一条调用&quot;docount()&quot;函数的指令，而这个函数不要传递参数。</p>
+<p>如果想要给该函数传递参数，则需要使用Pin中的枚举类型 <a target="_blank" rel="noopener" href="https://software.intel.com/sites/landingpage/pintool/docs/98650/Pin/doc/html/group__INST__ARGS.html#ga089c27ca15e9ff139dd3a3f8a6f8451d">IARG_TYPE</a> 进行传递，所有的参数都必须以IARG_END类型作为结束，即使上面的例子中没有传递参数，也需要使用IARG_END进行标示。</p>
+<p>安装官网文档上的方法编译运行后的结果如下所示：</p>
+<p><img src="./image/inscount.png" srcset="/img/loading.gif" lazyload alt="inscount"></p>
+<p>可以看到改工具能够成功对目标程序的指令数进行计数。</p>
+<h3 id="使用Pin实现自动脱壳">使用Pin实现自动脱壳</h3>
+<p>下面将演示如何通过自定义pintool实现由upx加壳工具加壳后的二进制的自动脱壳。</p>
+<p>二进制加壳的具体原理是将原来的二进制文件压缩或者加密，然后放在另一个新的二进制文件的数据段中，这个新的二进制文件的功能仅仅是将原来的二进制文件进行解压缩或者解密，然后将解压缩或者解密后的二进制文件映射到内存中直接执行。所以想要对加壳后的二进制文件进行脱壳，需要对加壳后的二进制文件运行时的内存写和执行的行为进行跟踪。</p>
+<p>UPX是一种常见的二进制加壳工具，使用命令&quot;sudo apt install upx&quot;即可完成安装。下面演示一个加壳后的二进制文件的反汇编结果：</p>
+<p><img src="./image/packed_file.png" srcset="/img/loading.gif" lazyload alt="packed_file"></p>
+<p>可以看到使用objdump进行反汇编的话将无法获取任何可用的信息，但是加壳后的二进制文件依然能够正常执行。另外，使用strings工具检查加壳后的二进制文件的话将会发现UPX加壳工具的一些提示性的信息，而二进制文件原来的符号信息也被掩藏了。</p>
+<p>所以这里的自动脱壳器就是指令级的插桩，然后检查每条指令的类型，判断其访存类型，而在Pin中可以使用API <a target="_blank" rel="noopener" href="https://software.intel.com/sites/landingpage/pintool/docs/98650/Pin/doc/html/group__INS__INSPECTION.html">Pin: Inspection API for IA-32 and Intel® 64 instructions</a>  来检查每条指令的相关信息。</p>
+<p><strong>在Pin中，对于一条写指令，只能在该指令执行之前才能够知道该指令写的地址</strong>，因此有一个插桩点必须是在该指令执行之前，用以记录该指令写的地址。<strong>但是在指令执行之前，也无法获取到该指令写的内容</strong>，所以这里还有一个插桩点就是该指令执行完成之后需要记录该指令写的内容。</p>
+<p>内存写指令前面的插桩点很好解决，但是该指令之后的插桩点相对比较复杂，因为考虑到一点就是该指令指令完之后可能会直接跳转到别的地方，所以直接插在该指令之后的话，可能无法执行插入的指令，因此这里还需要跟踪程序的控制流。</p>
+<p><img src="./image/jump_instruction.png" srcset="/img/loading.gif" lazyload alt="jump_instruction"></p>
+<p>如上图所示一条跳转指令会将控制流划分为跳转边(Taken edge)和直行边(Fallthrough edge)，<strong>而在Pin中，将非跳转指令后面的指令就是直行边</strong>。所以想要保证每条插入在内存写指令之后的指令能够被执行，需要检查该指令的是否有直行边和跳转边，然后分别对这两条边进行插桩。</p>
+<p>最后，自动脱壳器还需要检查原来的二进制文件的程序入口点(Original Entry Point, OEP)，其思路就是检查程序是否将控制流跳转到曾经写过的地址，并且最后的跳转通常是由间接跳转指令完成的。</p>
+<p>代码如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;iostream&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;fstream&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;vector&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;map&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;algorithm&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;stdint.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;pin.H&quot;</span></span><br><br><span class="hljs-keyword">typedef</span> <span class="hljs-keyword">struct</span> <span class="hljs-title class_">_memory_cluster_t</span><br>&#123;<br>    <span class="hljs-type">_memory_cluster_t</span>() : <span class="hljs-built_in">base_addr</span>(<span class="hljs-number">0</span>), <span class="hljs-built_in">size</span>(<span class="hljs-number">0</span>) &#123;&#125;<br>    <span class="hljs-type">_memory_cluster_t</span>(<span class="hljs-type">uint64_t</span> b, <span class="hljs-type">uint32_t</span> s) : <span class="hljs-built_in">base_addr</span>(b), <span class="hljs-built_in">size</span>(s) &#123;&#125;<br><br>    <span class="hljs-type">uint64_t</span> base_addr;<br>    <span class="hljs-type">uint32_t</span> size;<br>&#125;<span class="hljs-type">memory_cluster_t</span>;<br><br><span class="hljs-type">uint64_t</span> saved_addr = <span class="hljs-number">0</span>;<br><br>std::map&lt; <span class="hljs-type">uint64_t</span>, <span class="hljs-type">uint8_t</span> &gt; shadow_memory;<br>std::vector&lt; <span class="hljs-type">memory_cluster_t</span> &gt; clusters;<br><br>std::ofstream dumped_file;<br><br><span class="hljs-function">KNOB&lt;std::string&gt; <span class="hljs-title">dumped_file_name</span><span class="hljs-params">(KNOB_MODE_WRITEONCE, <span class="hljs-string">&quot;pintool&quot;</span>, <span class="hljs-string">&quot;o&quot;</span>, <span class="hljs-string">&quot;dumped.out&quot;</span>, <span class="hljs-string">&quot;the name of dumped file&quot;</span>)</span></span>;<br><br><span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">in_cluster</span><span class="hljs-params">(<span class="hljs-type">uint64_t</span> addr)</span></span><br><span class="hljs-function"></span>&#123;<br>    <span class="hljs-type">bool</span> result = <span class="hljs-literal">false</span>;<br>    std::for_each(clusters.<span class="hljs-built_in">begin</span>(), clusters.<span class="hljs-built_in">end</span>(), <br>        [&amp;result, addr](<span class="hljs-type">memory_cluster_t</span> m)&#123;<br>            <span class="hljs-keyword">if</span>(addr &gt;= m.base_addr &amp;&amp; addr &lt;= (m.base_addr + m.size))<br>                result = <span class="hljs-literal">true</span>;<br>        &#125;<br>    );<br>    <span class="hljs-keyword">return</span> result;<br>&#125;<br><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">set_cluster</span><span class="hljs-params">(<span class="hljs-type">memory_cluster_t</span> &amp;c, <span class="hljs-type">uint64_t</span> addr)</span></span><br><span class="hljs-function"></span>&#123;<br>    <span class="hljs-type">uint64_t</span> base_addr = addr;<br>    <span class="hljs-type">uint32_t</span> size = <span class="hljs-number">1</span>;<br>    <span class="hljs-keyword">while</span> (shadow_memory.<span class="hljs-built_in">find</span>(base_addr - <span class="hljs-number">1</span>) != shadow_memory.<span class="hljs-built_in">end</span>()) base_addr--;<br>    c.base_addr = base_addr;<br>    <span class="hljs-keyword">while</span> (shadow_memory.<span class="hljs-built_in">find</span>(base_addr + <span class="hljs-number">1</span>) != shadow_memory.<span class="hljs-built_in">end</span>())<br>    &#123;<br>        base_addr++;<br>        size++;<br>    &#125;<br>    c.size = size;<br>&#125;<br><br><span class="hljs-function"><span class="hljs-type">static</span> <span class="hljs-type">void</span> <span class="hljs-title">to_save_addr</span><span class="hljs-params">(<span class="hljs-type">uint64_t</span> addr)</span></span><br><span class="hljs-function"></span>&#123;<br>    saved_addr = addr;<br>&#125;<br><br><span class="hljs-function"><span class="hljs-type">static</span> <span class="hljs-type">void</span> <span class="hljs-title">to_save_value</span><span class="hljs-params">(<span class="hljs-type">uint32_t</span> size)</span></span><br><span class="hljs-function"></span>&#123;<br>    <span class="hljs-keyword">if</span>(size &gt; <span class="hljs-number">0</span>)<br>    &#123;<br>        <span class="hljs-type">uint64_t</span> addr = saved_addr;<br>        <span class="hljs-keyword">for</span>(<span class="hljs-type">uint64_t</span> i = addr; i &lt; addr + size; i++)<br>            <span class="hljs-built_in">PIN_SafeCopy</span>(&amp;shadow_memory[i], (<span class="hljs-type">const</span> <span class="hljs-type">void</span> *)i, <span class="hljs-number">1</span>);<br>    &#125;<br>&#125;<br><br><span class="hljs-function"><span class="hljs-type">static</span> <span class="hljs-type">void</span> <span class="hljs-title">check_original_entry_point</span><span class="hljs-params">(<span class="hljs-type">uint64_t</span> target_addr)</span></span><br><span class="hljs-function"></span>&#123;<br>    <span class="hljs-type">memory_cluster_t</span> c;<br>    <span class="hljs-keyword">if</span>(!<span class="hljs-built_in">in_cluster</span>(target_addr))<br>    &#123;<br>        <span class="hljs-built_in">set_cluster</span>(c, target_addr);<br>        clusters.<span class="hljs-built_in">push_back</span>(c);<br>    &#125;<br>&#125;<br><br><span class="hljs-function"><span class="hljs-type">static</span> <span class="hljs-type">void</span> <span class="hljs-title">ins_instrument</span><span class="hljs-params">(INS ins, <span class="hljs-type">void</span> *v)</span></span><br><span class="hljs-function"></span>&#123;<br>    <br>    <span class="hljs-keyword">if</span>(<span class="hljs-built_in">INS_IsMemoryWrite</span>(ins))<br>    &#123; <br>        <span class="hljs-built_in">INS_InsertPredicatedCall</span>(ins, IPOINT_BEFORE, (AFUNPTR)to_save_addr, IARG_MEMORYWRITE_EA, IARG_END);<br>        <span class="hljs-keyword">if</span>(<span class="hljs-built_in">INS_HasFallThrough</span>(ins))<br>            <span class="hljs-built_in">INS_InsertPredicatedCall</span>(ins, IPOINT_AFTER, (AFUNPTR)to_save_value, IARG_MEMORYWRITE_SIZE, IARG_END);<br>        <span class="hljs-keyword">if</span>(<span class="hljs-built_in">INS_IsValidForIpointTakenBranch</span>(ins))<br>            <span class="hljs-built_in">INS_InsertPredicatedCall</span>(ins, IPOINT_TAKEN_BRANCH, (AFUNPTR)to_save_value, IARG_MEMORYWRITE_SIZE, IARG_END);<br>        <br>    &#125;<br>    <span class="hljs-keyword">if</span>(<span class="hljs-built_in">INS_IsIndirectControlFlow</span>(ins) &amp;&amp; <span class="hljs-built_in">INS_OperandCount</span>(ins) &gt; <span class="hljs-number">0</span>)<br>    &#123;<br>        <span class="hljs-built_in">INS_InsertCall</span>(ins, IPOINT_BEFORE, (AFUNPTR)check_original_entry_point, IARG_BRANCH_TARGET_ADDR, IARG_END);<br>    &#125;<br>&#125;<br><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">fini</span><span class="hljs-params">(INT32 code, <span class="hljs-type">void</span> *v)</span></span><br><span class="hljs-function"></span>&#123;<br>    std::cout &lt;&lt; clusters.<span class="hljs-built_in">size</span>() &lt;&lt; <span class="hljs-string">&quot;\n&quot;</span>;<br>    std::for_each(clusters.<span class="hljs-built_in">begin</span>(), clusters.<span class="hljs-built_in">end</span>(),<br>        [](<span class="hljs-type">memory_cluster_t</span> c)&#123;<br>            std::cout &lt;&lt; <span class="hljs-string">&quot;cluster size: 0x&quot;</span> &lt;&lt; std::hex &lt;&lt; c.size &lt;&lt; <span class="hljs-string">&#x27;\n&#x27;</span>;<br>            <span class="hljs-keyword">if</span>(c.size &gt; <span class="hljs-number">0x1000</span>)<br>            &#123;<br>                <span class="hljs-type">uint32_t</span> i;<br>                <span class="hljs-keyword">for</span>(i = <span class="hljs-number">0</span>; i &lt; c.size; i++)<br>                    dumped_file.<span class="hljs-built_in">write</span>((<span class="hljs-type">char</span> *)&amp;shadow_memory[c.base_addr + i], <span class="hljs-built_in">sizeof</span>(<span class="hljs-type">uint8_t</span>));<br>            &#125;<br>        &#125;<br>    );<br>    dumped_file.<span class="hljs-built_in">close</span>();<br>&#125;<br><br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">main</span><span class="hljs-params">(<span class="hljs-type">int</span> argc, <span class="hljs-type">char</span> *argv[])</span></span><br><span class="hljs-function"></span>&#123;<br>    <span class="hljs-keyword">if</span>(<span class="hljs-built_in">PIN_Init</span>(argc, argv)) <br>    &#123;<br>        <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;Usage: %s &lt;packed file&gt;&quot;</span>, argv[<span class="hljs-number">0</span>]);<br>        <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>    &#125;<br>    dumped_file.<span class="hljs-built_in">open</span>(dumped_file_name.<span class="hljs-built_in">Value</span>().<span class="hljs-built_in">c_str</span>(), std::ios_base::binary);<br>   <br>    <span class="hljs-built_in">INS_AddInstrumentFunction</span>(ins_instrument, <span class="hljs-number">0</span>);<br><br>    <span class="hljs-built_in">PIN_AddFiniFunction</span>(fini, <span class="hljs-number">0</span>);<br><br>    <span class="hljs-built_in">PIN_StartProgram</span>();<br><br>    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>这个实验暂时是失败的，最后一共得到17个memory_cluster，其大小分别如下：</p>
+<p><img src="./image/unpack_result.png" srcset="/img/loading.gif" lazyload alt="unpack_result"></p>
+<p>大小只有0x1肯定不是我们要找的cluster，所以在另外两个cluster中找，但是将另外两个cluster分别dump下来后使用strings进行检查，都没有得到想要的结果。</p>
+<p>这个实验暂时搁置。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/experiment-log/" class="category-chain-item">experiment log</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/binary-analysis/">#binary analysis</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>二进制加壳与脱壳</div>
+      <div>https://2hyan9.github.io/2022/12/06/二进制加壳与脱壳/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>2hYan9</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2022年12月6日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/03/01/Malware-Analysis-Lab07-01-EXP/" title="Malware Analysis Lab07_01 EXP">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Malware Analysis Lab07_01 EXP</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/11/25/custom-disassemble/" title="custom disassemble">
+                        <span class="hidden-mobile">custom disassemble</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

@@ -1,0 +1,746 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="2hYan9">
+  <meta name="keywords" content="some notes">
+  
+    <meta name="description" content="Overview of linux kernel ref. linux kernel labs 操作系统基本概念 这里先简单回顾一些操作系统中的基本概念，这些内容只是对Linux系统结构的一个提纲挈领的概述，如果想要了解更多的细节，还需要查阅别的资料。 User &amp; Kernel 首先是用户(User)和内核(Kernel)的概念，内核是操作系统的一部分，以较高的权限运行，而用户则是应用的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="overview of linux kernel">
+<meta property="og:url" content="https://2hyan9.github.io/2022/10/27/overview-of-linux-kernel/index.html">
+<meta property="og:site_name" content="TheFuture1sNow">
+<meta property="og:description" content="Overview of linux kernel ref. linux kernel labs 操作系统基本概念 这里先简单回顾一些操作系统中的基本概念，这些内容只是对Linux系统结构的一个提纲挈领的概述，如果想要了解更多的细节，还需要查阅别的资料。 User &amp; Kernel 首先是用户(User)和内核(Kernel)的概念，内核是操作系统的一部分，以较高的权限运行，而用户则是应用的">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://2hyan9.github.io/2022/10/27/overview-of-linux-kernel/image/kernel_and_user_space.png">
+<meta property="og:image" content="https://2hyan9.github.io/2022/10/27/overview-of-linux-kernel/image/typical_os_architecture.png">
+<meta property="og:image" content="https://2hyan9.github.io/2022/10/27/overview-of-linux-kernel/image/linux_src_code_layout.png">
+<meta property="og:image" content="https://2hyan9.github.io/2022/10/27/overview-of-linux-kernel/image/linux_kernel_architecture.png">
+<meta property="og:image" content="https://2hyan9.github.io/2022/10/27/overview-of-linux-kernel/image/block_IO_management.png">
+<meta property="og:image" content="https://2hyan9.github.io/2022/10/27/overview-of-linux-kernel/image/VFS.png">
+<meta property="og:image" content="https://2hyan9.github.io/2022/10/27/overview-of-linux-kernel/image/network_stack.png">
+<meta property="article:published_time" content="2022-10-27T13:38:32.000Z">
+<meta property="article:modified_time" content="2022-12-03T14:26:01.821Z">
+<meta property="article:author" content="2hYan9">
+<meta property="article:tag" content="binary analysis">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://2hyan9.github.io/2022/10/27/overview-of-linux-kernel/image/kernel_and_user_space.png">
+  
+  
+  
+  <title>overview of linux kernel - TheFuture1sNow</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"2hyan9.github.io","root":"/","version":"1.9.3","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"left","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>2hYan9</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="overview of linux kernel"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-10-27 21:38" pubdate>
+          2022年10月27日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          3.7k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          32 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="padding-left: 2rem; margin-right: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">overview of linux kernel</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="Overview-of-linux-kernel">Overview of linux kernel</h2>
+<p>ref. <a target="_blank" rel="noopener" href="https://linux-kernel-labs.github.io/refs/heads/master/index.html">linux kernel labs</a></p>
+<h3 id="操作系统基本概念">操作系统基本概念</h3>
+<p>这里先简单回顾一些操作系统中的基本概念，这些内容只是对Linux系统结构的一个提纲挈领的概述，如果想要了解更多的细节，还需要查阅别的资料。</p>
+<h4 id="User-Kernel">User &amp; Kernel</h4>
+<p>首先是用户(User)和内核(Kernel)的概念，内核是操作系统的一部分，以较高的权限运行，而用户则是应用的一部分，以较低的权限运行。</p>
+<p>而<u>用户模式</u>和<u>内核模式</u>则是指处理器的执行模式，<strong>运行在内核模式下的代码能够完全地控制CPU，而运行在用户模式下的代码则存在一定的限制</strong>。</p>
+<p>比如说，在ARM的Cortex-A75处理器下，可以通过CPUECTLR_EL1(CPU Extended Control Register, EL1)寄存器来控制CPU的一些配置，比如开启或关闭缓存预取。而想要访问这个寄存器只需要通过 <code>MRS</code> 汇编指令来读取寄存器，使用 <code>MSR</code> 指令来修改。但是如果在应用中通过内联汇编插入这两条汇编指令后，执行应用的时候会出现&quot;illegal Instruction&quot;错误。这是因为这两条指令只能在CPU的内核模式下执行，而应用中的指令都是CPU在用户模式下执行的。</p>
+<p>而<u>用户空间(User space)</u>和<u>内核空间(Kernel space)</u>则是与内核和用户应用相关的虚拟内存地址空间保护的手段。</p>
+<p><img src="./image/kernel_and_user_space.png" srcset="/img/loading.gif" lazyload alt="kernel_and_user_space"></p>
+<p>也就是说，内核空间是为内核保留的内存区域，而用户空间则是为特定用户进程保留的内存区域。内核空间的访问是受保护的，用户应用无法直接访问内核空间，而由内核模式执行的代码则能够直接访问用户空间。</p>
+<h4 id="Operating-system-architecture">Operating system architecture</h4>
+<p>下图是一个典型的操作系统结构，操作系统内核负责向多个应用以一种安全且平等的方式向多个应用提供硬件的访问和共享。</p>
+<p><img src="./image/typical_os_architecture.png" srcset="/img/loading.gif" lazyload alt="typical_os_architecture"></p>
+<p>内核提供了一系列APIs以供用于应用使用，也就是所谓的系统调用。这些API与通常的函数库中的API不同，因为系统调用通常是CPU执行模式从用户模式切换到内核模式的边界。为了提供兼容性，系统调用通常很少改变。</p>
+<p>此外，内核代码在逻辑上也可以划分为内核核心代码和设备驱动代码，设备驱动代码负责提供特定设备的访问，而内核核心代码则更加的通用。当然，内核核心代码也可以进一步划分为多个逻辑子系统，比如文件系统，网络，进程管理等。</p>
+<h4 id="Execution-context">Execution context</h4>
+<p>内核最重要的工作之一就是提供有效的中断服务，而这就与一个特殊的执行上下文相关联。</p>
+<p>当内核收到一个中断时，将会运行在中断上下文(Interrupt Context)中，这包含一个中断处理器，此外还有一些特殊软件也会运行中中断上下文中。在中断上下文中执行的代码通常是CPU在内核模式下执行的，并且内核开发者必须了解这些代码所存在的一些限制，比如不能够调用阻塞函数或者访问用户空间。</p>
+<p>与中断上下文相对应的就是进程上下文(Process Context)。</p>
+<p>进程上下文就是进程当前执行的状态。进程上下文能够进入睡眠状态、可抢占状态，通常用于执行耗时的任务，获取和释放互斥锁。</p>
+<p>中断上下文就是指中断发生，状态/优先级进入中断处理程序，而当前进程停止并保存当前状态直到中断处理完成期间的状态。中断上下文不可进入睡眠状态、不可抢占，通常执行不耗时的任务。</p>
+<h3 id="Linux-kernel概述">Linux kernel概述</h3>
+<p>Linux源码的布局如下：</p>
+<p><img src="./image/linux_src_code_layout.png" srcset="/img/loading.gif" lazyload alt="linux_src_code_layout"></p>
+<p>这些就是Linux源码顶层文件夹：</p>
+<ul>
+<li>arch - 包含架构特定的代码；每个架构都在特定的子文件夹中实现（例如 arm、arm64、x86）</li>
+<li>block - 包含处理从阻塞设备(block service)读取和写入数据的块子系统代码：创建块 I/O 请求，对其进行调度（使用I/O 调度器），然后合并请求，并通过 I/O 堆栈将它们向下传递到阻塞设备驱动程序</li>
+<li>certs - 使用证书实现对签名验证的支持</li>
+<li>crypto - 各类密码算法的软件实现</li>
+<li>Documentation - 各种子系统的文档、Linux 内核命令行选项、sysfs 文件和格式的描述、设备树绑定</li>
+<li>drivers - 各种设备的驱动程序以及 Linux 驱动程序模型实现（描述驱动程序、设备总线及其连接方式）</li>
+<li>firmware - 各种设备驱动程序使用的二进制或十六进制固件文件</li>
+<li>fs - 虚拟文件系统交换机(Virtual Filesystem Switch)（通用文件系统代码）和各种文件系统驱动程序的所在地</li>
+<li>include - header files</li>
+<li>init - 在系统启动(boot)时所运行的通用初始化代码</li>
+<li>ipc - 实现进程间通信的各类系统调用，比如消息队列(Message queue)、信号量(semaphores)以及共享内存(shared memory)</li>
+<li>kernel - 进程管理的代码（包括实现内核线程和工作队列的代码），调度器，时间管理，通用irq代码以及实现锁的代码</li>
+<li>lib - 各种通用函数，比如排序，校验和，压缩和解压缩以及位图修改</li>
+<li>mm - 内存管理的代码</li>
+<li>net - 各种网络协议栈的实现，包括IPv4和IPv6</li>
+<li>samples - 各种驱动器采样</li>
+<li>scripts - 构建系统(build system)的一部分，用于构建模块的脚本，kconfig Linux 内核配置器，以及各种其他脚本（例如检查补丁是否符合 Linux 内核编码风格的 <a target="_blank" rel="noopener" href="http://checkpatch.pl">checkpatch.pl</a>）</li>
+<li>security - Linux 安全模块框架的所在地，它允许扩展默认 (Unix) 安全模型以及实现多个此类扩展，例如 SELinux、smack、apparmor、tomoyo 等。</li>
+<li>sound - ALSA(Advanced Linux Sound System)的所在地</li>
+<li>tools - 各种用于测试或者与内核子系统交互的用户空间工具</li>
+<li>usr - 用于支持在内核镜像中嵌入initrd文件的代码</li>
+<li>virt - KVM管理程序(Kernel Virtual Machine Hypervisor)的所在地</li>
+</ul>
+<p>Linux内核的结构如下图所示：</p>
+<p><img src="./image/linux_kernel_architecture.png" srcset="/img/loading.gif" lazyload alt="linux_kernel_architecture"></p>
+<p>下面对结构中的一些比较重要的部分进行介绍。</p>
+<h4 id="Arch">Arch</h4>
+<p>这个部分就是特定于系统架构的代码，并且可以进一步划分为特定体系架构的机器特定代码。</p>
+<p>它实现了对架构或机器特定的各种硬件位的访问，例如中断控制器、SMP 控制器、BUS 控制器、异常和中断设置、虚拟内存处理。</p>
+<p>这里也实现了体系架构的优化函数，比如memcpy，字符串操作。</p>
+<h4 id="Process-Management">Process Management</h4>
+<p>Linux实现了Unix中的进程管理标准APIs，比如fork(), exec(), wait()，以及POSIX标准线程。</p>
+<p>然而，在Linux中对于进程和线程的实现与其他内核尤其不同。Linux中没有实现进程或者线程的内部结构，而是使用&quot;struct task_struct&quot;这样的数据结构来描述被称为任务(task)的抽象调度单元。</p>
+<p>在一个task中有指向资源的指针，比如地址空间，文件描述符，IPC id等。</p>
+<p>属于同一个进程的任务的指针将会指向同样的资源，而属于不同进程的任务的指针将会指向不同的资源。这种特性与clone() 和 unshare() 系统调用共同实现了新的功能，也就是命名空间(namespace)。</p>
+<p>命名空间和cgroup(control groups)由共同实现了Linux中的操作系统虚拟化，cgroup 是一种按层次组织进程并以受控和可配置的方式沿层次结构分配系统资源的机制。</p>
+<h4 id="Memory-Management">Memory Management</h4>
+<p>Linux中的内存管理是一个复杂的子系统，主要处理：</p>
+<ul>
+<li>管理物理内存：分配和释放内存</li>
+<li>管理虚拟内存：包括分页，交换，请求分页以及写时复制</li>
+<li>用户服务：用户地址空间的管理，比如mmap(), brk()以及共享内存</li>
+<li>内核服务：SL*B(SLAB, SLOB, SLUB)分配器(allocator)，vmalloc()</li>
+</ul>
+<p>对于Linux中的内存管理，主要接触的还是用户服务这部分的内容。</p>
+<h4 id="阻塞I-O管理">阻塞I/O管理</h4>
+<p>Linux中的阻塞I/O管理框架如下图所示：</p>
+<p><img src="./image/block_IO_management.png" srcset="/img/loading.gif" lazyload alt="block_IO_management"></p>
+<p>Linux中的阻塞I/O管理子系统主要处理从阻塞I/O设备中读取数据或者向阻塞I/O设备中写入数据，比如创建一个阻塞I/O请求，合并并对这些请求进行排序，然后通过各种I/O调度器来将这些请求调度到阻塞设备的驱动器。</p>
+<h4 id="VFS-Virtual-Filesystem-Switch">VFS(Virtual Filesystem Switch)</h4>
+<p>虚拟文件系统交换机(Virtual Filesystem Switch, VFS)实现了一种通用的文件系统以减少文件系统驱动器的重复，引入了如下几个文件系统抽象：</p>
+<ul>
+<li>inode - 用于描述磁盘上的文件，比如属性，数据块在磁盘上的位置</li>
+<li>dentry - 将inode关联到一个名称上</li>
+<li>file - 用于描述一个已开启的文件的属性，比如文件指针</li>
+<li>superblock - 用于描述格式化的文件系统的属性，比如数据块的数量，数据块的大小，根目录在磁盘上的位置等</li>
+</ul>
+<p>VFS还实现了一个复杂的缓存机制，如下：</p>
+<ul>
+<li>inode cache - 用于缓存文件属性和文件内部的元数据</li>
+<li>dentry cache - 用于缓存文件系统的目录层次结构</li>
+<li>page cache - 用于缓存内存中的文件数据块</li>
+</ul>
+<p><img src="./image/VFS.png" srcset="/img/loading.gif" lazyload alt="VFS"></p>
+<p>上图描述了VFS的整体框架。</p>
+<h4 id="Networking-Stack">Networking Stack</h4>
+<p><img src="./image/network_stack.png" srcset="/img/loading.gif" lazyload alt="network stack"></p>
+<p>上图是Linux中的网络协议栈。</p>
+<p>这篇文档主要是对Linux系统的各个组成部分进行一个提纲挈领的概述，如果需要了解更多的细节，还需要进一步查阅资料。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/notes/" class="category-chain-item">notes</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/binary-analysis/">#binary analysis</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>overview of linux kernel</div>
+      <div>https://2hyan9.github.io/2022/10/27/overview-of-linux-kernel/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>2hYan9</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2022年10月27日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2022/11/13/cpp-notes-for-class/" title="cpp notes for class">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">cpp notes for class</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/10/17/gnu-hash-notes/" title="gnu hash notes">
+                        <span class="hidden-mobile">gnu hash notes</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
