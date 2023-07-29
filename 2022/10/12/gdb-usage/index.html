@@ -24,7 +24,7 @@
 <meta property="og:description" content="GDB basic usage ref. GDB User Manual GDB是一个功能十分强大的调试工具，对于二进制分析工作非常有用。这里记录GDB的一些常见用法，如果想要了解关于GDB使用的详细信息，可以参考GDB用户手册。 Get in and out of GDB 这里先介绍如何启动GDB，可以直接在命令行中输入gdb即可启动gdb。一旦启动gdb，gdb将会从命令行中读取命令直到退出。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2022-10-12T13:50:34.000Z">
-<meta property="article:modified_time" content="2022-10-25T02:47:55.701Z">
+<meta property="article:modified_time" content="2023-03-23T06:54:04.000Z">
 <meta property="article:author" content="2hYan9">
 <meta property="article:tag" content="binary analysis">
 <meta name="twitter:card" content="summary_large_image">
@@ -219,7 +219,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          1.9k 字
+          2k 字
         
       </span>
     
@@ -230,7 +230,7 @@
         
         
         
-          16 分钟
+          18 分钟
         
       </span>
     
@@ -320,6 +320,13 @@
 <p>而相较于 <code>info</code> 指令，<code>show</code> 指令则是用于描述GDB自身的状态，可以使用 <code>show</code> 命令来查看所有由 <code>set</code> 指令所设置的选项，比如 <code>show env</code> 来查看设置的环境变量。</p>
 <p>如果想要查看所有可以使用 <code>set</code> 命令设置的选项，那么可以使用不带参数的<code>show</code> 命令或者 <code>info set</code> 来查看，这两个命令的输出都是一样的。</p>
 <h3 id="Stopping-and-Continuing">Stopping and Continuing</h3>
+<p>在GDB中有三种情况可以让程序停止运行：</p>
+<ol>
+<li>breakpoint: 当程序运行到设置断点的地址后，将会停止运行；</li>
+<li>watchpoint: 当某个表达式的值改变时，程序会停止运行，这种断点有时也被称为数据断点；</li>
+<li>catchpoint: 当发生某种类型的事件时，程序会停止运行，比如程序抛出某个exception或者加载共享库时；</li>
+</ol>
+<p>这三种断点需要使用不同命令来进行设置。</p>
 
                 
               </div>

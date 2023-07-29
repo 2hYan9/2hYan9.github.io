@@ -1,0 +1,756 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="2hYan9">
+  <meta name="keywords" content="some notes">
+  
+    <meta name="description" content="VMware虚拟机搭载TOR出网 在样本分析的工作中，通常会存在出网调试的需要，而直接使用本地网络出网会存在被攻击者反向溯源的风险。 所以一种更加安全可靠的出网方案是走TOR出网，从而实现匿名性。 TOR(The Onion Router) TOR是一个开源项目，其目的主要是为用户提供匿名通信服务。TOR通过志愿者运行的服务器（节点）网络运行，这些服务器（节点）通过多层加密传递互联网流量，从而创建">
+<meta property="og:type" content="article">
+<meta property="og:title" content="VMware虚拟机搭载TOR出网">
+<meta property="og:url" content="https://2hyan9.github.io/2023/07/29/VMware%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%90%AD%E8%BD%BDTOR%E5%87%BA%E7%BD%91/index.html">
+<meta property="og:site_name" content="TheFuture1sNow">
+<meta property="og:description" content="VMware虚拟机搭载TOR出网 在样本分析的工作中，通常会存在出网调试的需要，而直接使用本地网络出网会存在被攻击者反向溯源的风险。 所以一种更加安全可靠的出网方案是走TOR出网，从而实现匿名性。 TOR(The Onion Router) TOR是一个开源项目，其目的主要是为用户提供匿名通信服务。TOR通过志愿者运行的服务器（节点）网络运行，这些服务器（节点）通过多层加密传递互联网流量，从而创建">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://2hyan9.github.io/2023/07/29/VMware%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%90%AD%E8%BD%BDTOR%E5%87%BA%E7%BD%91/image/hardware_setting.png">
+<meta property="og:image" content="https://2hyan9.github.io/2023/07/29/VMware%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%90%AD%E8%BD%BDTOR%E5%87%BA%E7%BD%91/image/partition_setting.png">
+<meta property="og:image" content="https://2hyan9.github.io/2023/07/29/VMware%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%90%AD%E8%BD%BDTOR%E5%87%BA%E7%BD%91/image/pfSense.png">
+<meta property="og:image" content="https://2hyan9.github.io/2023/07/29/VMware%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%90%AD%E8%BD%BDTOR%E5%87%BA%E7%BD%91/image/vmware_network.png">
+<meta property="og:image" content="https://2hyan9.github.io/2023/07/29/VMware%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%90%AD%E8%BD%BDTOR%E5%87%BA%E7%BD%91/image/assign_lan_addr.png">
+<meta property="og:image" content="https://2hyan9.github.io/2023/07/29/VMware%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%90%AD%E8%BD%BDTOR%E5%87%BA%E7%BD%91/image/enable_web_conf.png">
+<meta property="og:image" content="https://2hyan9.github.io/2023/07/29/VMware%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%90%AD%E8%BD%BDTOR%E5%87%BA%E7%BD%91/image/pfSense_webconf.png">
+<meta property="og:image" content="https://2hyan9.github.io/2023/07/29/VMware%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%90%AD%E8%BD%BDTOR%E5%87%BA%E7%BD%91/image/vm_network_setting.png">
+<meta property="og:image" content="https://2hyan9.github.io/2023/07/29/VMware%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%90%AD%E8%BD%BDTOR%E5%87%BA%E7%BD%91/image/routing_success.png">
+<meta property="og:image" content="https://2hyan9.github.io/2023/07/29/VMware%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%90%AD%E8%BD%BDTOR%E5%87%BA%E7%BD%91/image/tor_installation.png">
+<meta property="og:image" content="https://2hyan9.github.io/2023/07/29/VMware%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%90%AD%E8%BD%BDTOR%E5%87%BA%E7%BD%91/image/rundunt_rules.png">
+<meta property="og:image" content="https://2hyan9.github.io/2023/07/29/VMware%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%90%AD%E8%BD%BDTOR%E5%87%BA%E7%BD%91/image/tor_success.png">
+<meta property="article:published_time" content="2023-07-29T07:55:18.000Z">
+<meta property="article:modified_time" content="2023-07-29T13:13:53.878Z">
+<meta property="article:author" content="2hYan9">
+<meta property="article:tag" content="binary analysis">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://2hyan9.github.io/2023/07/29/VMware%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%90%AD%E8%BD%BDTOR%E5%87%BA%E7%BD%91/image/hardware_setting.png">
+  
+  
+  
+  <title>VMware虚拟机搭载TOR出网 - TheFuture1sNow</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"2hyan9.github.io","root":"/","version":"1.9.3","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"left","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>2hYan9</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="VMware虚拟机搭载TOR出网"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-07-29 15:55" pubdate>
+          2023年7月29日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          4.3k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          36 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="padding-left: 2rem; margin-right: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">VMware虚拟机搭载TOR出网</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="VMware虚拟机搭载TOR出网">VMware虚拟机搭载TOR出网</h2>
+<p>在样本分析的工作中，通常会存在出网调试的需要，而直接使用本地网络出网会存在被攻击者反向溯源的风险。</p>
+<p>所以一种更加安全可靠的出网方案是走TOR出网，从而实现匿名性。</p>
+<h3 id="TOR-The-Onion-Router">TOR(The Onion Router)</h3>
+<p>TOR是一个开源项目，其目的主要是为用户提供匿名通信服务。TOR通过志愿者运行的服务器（节点）网络运行，这些服务器（节点）通过多层加密传递互联网流量，从而创建多跳、类似洋葱的路由机制。</p>
+<p>当用户使用TOR时，其互联网流量经由一连串的TOR节点路由，而每个节点只知道前一个节点的IP地址，而节点间的通信也采用了多层加密，因此无论是互联网服务提供商(ISP)还是监控机构，都很难以追踪正在传输的数据的来源和目的地。</p>
+<h3 id="环境设置">环境设置</h3>
+<p>TOR项目中提供了TOR浏览器，通过TOR浏览器能够实现匿名上网的目的。</p>
+<p>但是如果想要所有的流量都能够走TOR实现匿名，那么还需要更加复杂的设置。</p>
+<p>不仅如此，如果同时有多个虚拟机需要匿名出网，那么可以将这些虚拟机部署在同一个网段，然后将TOR搭载在出网的网关上，所以需要将TOR服务搭载到一个路由器上。</p>
+<h4 id="pfSense">pfSense</h4>
+<p>pfSense是一款基于FreeBSD操作系统的开源防火墙和路由软件，可以用来构建虚拟环境中的防火墙和路由器。</p>
+<p>所以现在的思路就是，使用pfSense创建一个虚拟路由器，也就是VMware中的一个虚拟机，将虚拟网段中的虚拟机的网关设置为这个虚拟路由器的LAN口地址。随后，再在这个虚拟路由器中搭载TOR服务，使其将流量路由到TOR网络。</p>
+<h2 id="使用pfSense创建TOR网关">使用pfSense创建TOR网关</h2>
+<h3 id="创建pfSense虚拟路由器">创建pfSense虚拟路由器</h3>
+<p>下载pfSense镜像，可以在官网上下载，但是官网上只有最新的Release版本，而本文建议使用pfSense2.5的版本。</p>
+<p>所以可以在Github上找到镜像源：</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/CloudSentralDotNet/iso_pfsense">https://github.com/CloudSentralDotNet/iso_pfsense</a></p>
+<p>下载ISO文件后直接在VMware中创建虚拟机，跟创建普通虚拟机没什么区别，只是硬件设置需要注意：</p>
+<ol>
+<li>
+<p>内存256M就够用了</p>
+</li>
+<li>
+<p>需要设置两个网卡(网络适配器)</p>
+<p>一个设置为仅主机模式，用以充当虚拟网络的网关(LAN口)</p>
+<p>一个设置为NAT模式，用以出网，充当路由器的WAN口</p>
+</li>
+</ol>
+<p><img src="./image/hardware_setting.png" srcset="/img/loading.gif" lazyload alt="hardware_setting"></p>
+<p>在设置好pfSense的硬件设置后，启动虚拟机执行安装程序了。按照默认设置，除了分区需要注意一点，就是使用BIOS分区。</p>
+<p><img src="./image/partition_setting.png" srcset="/img/loading.gif" lazyload alt="partition setting"></p>
+<p>安装完成后，进入pfSense配置页面。</p>
+<p><img src="./image/pfSense.png" srcset="/img/loading.gif" lazyload alt="pfSense"></p>
+<p>打开虚拟机网络设置编辑器，检查一下上面的WAN口是不是配在NAT网段的。</p>
+<p><img src="./image/vmware_network.png" srcset="/img/loading.gif" lazyload alt="vmware_network"></p>
+<p>我这里可以看到WAN口是否属于VMware虚拟机NAT网段的，如果不是的话需要在pfSense配置页面的选项1重新分配网卡。</p>
+<p>网卡分配没问题的话就进入选项2，进行LAN地址的手动分配。</p>
+<p><img src="./image/assign_lan_addr.png" srcset="/img/loading.gif" lazyload alt="assign lan addr"></p>
+<p>剩下的IPv6的设置不用管，直接ENTER。注意关闭LAN口的dhcp服务，并开启pfSense的网页配置器(webConfigurator)。</p>
+<p><img src="./image/enable_web_conf.png" srcset="/img/loading.gif" lazyload alt="enable web conf"></p>
+<p>开启了webConfigurator后，就可以直接在浏览器中输入LAN口的地址进行pfSense路由器配置了，路由器配置页的默认账号密码为：admin, pfsense。</p>
+<p><img src="./image/pfSense_webconf.png" srcset="/img/loading.gif" lazyload alt="pfSenese_webconf"></p>
+<p>根据安装向导进行安装即可，不需要执行什么额外的操作，不过可以修改一下路由器配置页的登录密码。</p>
+<p>完成安装后，可以验证pfSense路由功能。</p>
+<p>开启另一台虚拟机，虚拟机的网络适配器设置为仅主机模式，IP地址与pfSense路由器的LAN口地址属于同一个网段，然后将默认网关以及DNS服务器（pfSense提供DNS解析服务）都设置为pfSense路由器LAN口地址。</p>
+<p><img src="./image/vm_network_setting.png" srcset="/img/loading.gif" lazyload alt="vm network setting"></p>
+<p>然后用路由器打开一个页面，可以看到是能够连通互联网的。</p>
+<p><img src="./image/routing_success.png" srcset="/img/loading.gif" lazyload alt="routing success"></p>
+<p>所以可以验证pfSense的路由功能是没有问题的，下一步就是要在pfSense中搭载tor服务了，让pfSense将流量路由到tor网络中。</p>
+<h3 id="在pfSense中搭载TOR服务">在pfSense中搭载TOR服务</h3>
+<p>回到pfSense虚拟机，进入选项14，开启Secure Shell服务。</p>
+<p>然后回到物理机中，开启命令行通过shell登录pfSense虚拟机。登录的账号密码就是pfSense网页配置器的账号密码。ssh登录后通过选项8进入shell页面。</p>
+<p><code>ssh admin@192.168.179.203</code></p>
+<p>后面需要使用FreeBSD系统中的包管理器<code>pkg</code>安装我们所需要的tor包。pfSense中设置了默认的包仓库，名为pfSense和pfSense-core。但是这两个仓库里面都没有我们需要的tor包，tor包在FreeBSD仓库中，这个仓库是默认关闭的。修改pkg的仓库配置文件来开启这个仓库，</p>
+<p><code>vi /usr/local/etc/pkg/repos/FreeBSD.conf</code></p>
+<p><code>vi /usr/local/etc/pkg/repos/pfSense.conf</code></p>
+<p>将FreeBSD: { enabled: no }改为FreeBSD: { enabled: yes }。</p>
+<blockquote>
+<p>使用<code>pkg stat</code>可以查看现在可用的仓库数量以及可下载的包的数量，使用<code>pkg rquery -I tor</code>可以查看tor在已有仓库里的那个仓库中。</p>
+<p>如果想要了解更多pkg相关的内容，可以在google上搜索man pkg导航到FreeBSD官网的pkg手册。</p>
+</blockquote>
+<p>然后输入<code>pkg update</code>更新pkg仓库目录。</p>
+<p>更新完成后，因为我们只需要从FreeBSD仓库中下载我们需要的包，所以可以删除前面修改过的pfSense.conf文件，只保留FreeBSD这一个仓库。使用</p>
+<p><code>pkg install tor</code></p>
+<p>下载tor包。</p>
+<blockquote>
+<p>因为这里并没有进行很细致的pkg配置，所以不删除pfSense仓库的话后面的下载过程中会出现&quot;An error occured while fetching package&quot;。猜测可能是因为pfSense的源在外网，所以无法访问。所以这里直接删除这个仓库，以免出现上面的错误而中断下载进程。</p>
+</blockquote>
+<p><img src="./image/tor_installation.png" srcset="/img/loading.gif" lazyload alt="tor installation"></p>
+<p>这样就顺利将TOR下载到pfSense中了，接下来就是进行tor配置。</p>
+<p>先删除原来的配置文件：</p>
+<p><code>rm /usr/local/etc/tor/torrc</code></p>
+<p>然后将这个配置文件的内容写为：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">DNSPort</span> LAN_IP_ADDR:<span class="hljs-number">53</span><br><span class="hljs-attribute">VirtualAddrNetworkIPv4</span> <span class="hljs-number">10.192.0.0</span>/<span class="hljs-number">11</span><br><span class="hljs-attribute">AutomapHostsOnResolve</span> <span class="hljs-number">1</span><br><span class="hljs-attribute">RunAsDaemon</span> <span class="hljs-number">1</span><br><span class="hljs-attribute">TransPort</span> <span class="hljs-number">9040</span><br></code></pre></td></tr></table></figure>
+<p>将上面的LAN_IP_ADDR改成pfSense的LAN口IP地址。</p>
+<p>可以通过命令<code>/usr/local/bin/tor</code>来启动TOR。</p>
+<blockquote>
+<p>如果想要让TOR在pfSense开机时自启动，可以在目录/usr/local/etc/rc.d下创建tor启动脚本，比如：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs shell">touch /usr/local/etc/rc.d/tor.sh<br>chmod +x /usr/local/etc/rc.d/tor.sh<br>echo &quot;/usr/local/bin/tor&quot; &gt;&gt; /usr/local/etc/rc.d/tor.sh<br></code></pre></td></tr></table></figure>
+<p>pfSense每次开机时就会运行/usr/local/etc/rc.d/tor.sh脚本，从而启动TOR。</p>
+</blockquote>
+<p>随后可以配置防火墙规则，让pfSense将流量路由到TOR网中。</p>
+<p>来到pfSense的网页配置器中，Firewall-&gt;Rules-&gt;LAN，添加下面这段防火墙规则：</p>
+<figure class="highlight vbnet"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs vbnet"><span class="hljs-symbol">Action:</span> Pass<br><span class="hljs-symbol">Interface:</span> LAN<br>Address Family: IPv4<br><span class="hljs-symbol">Protocol:</span> TCP/UDP (DNS can be both)<br><span class="hljs-symbol">Source:</span> LAN net (anything <span class="hljs-keyword">on</span> the LAN)<br><span class="hljs-symbol">Destination:</span> <span class="hljs-type">Single</span> host <span class="hljs-built_in">or</span> <span class="hljs-keyword">alias</span> [IP address <span class="hljs-keyword">of</span> LAN <span class="hljs-keyword">interface</span>]<br>Destination Port Range: DNS (<span class="hljs-number">53</span>)<br></code></pre></td></tr></table></figure>
+<p>上面这段防火墙规则允许pfSense通过TOR网络进行DNS解析，保存后回到防火墙规则列表中，删除下面两条原有的防火墙规则，因为这两条规则会绕过我们刚设置的规则。</p>
+<p><img src="./image/rundunt_rules.png" srcset="/img/loading.gif" lazyload alt="rundunt rules"></p>
+<p>删除后点击Apply Changes。</p>
+<p>然后关闭pfSense原有的DNS解析服务，Services-&gt;DNS resolver，将Enable选项取消掉，然后save &amp; apply。</p>
+<p>再然后就是设置端口转发(Port Forward)规则，Firewall-&gt;NAT-&gt;Port Forward，添加规则：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">Interface:</span> <span class="hljs-string">LAN</span><br><span class="hljs-attr">Address Family:</span> <span class="hljs-string">IPv4</span><br><span class="hljs-attr">Protocol:</span> <span class="hljs-string">TCP</span><br><span class="hljs-attr">Destination:</span> <span class="hljs-string">LAN</span> <span class="hljs-string">net</span><br><span class="hljs-attr">Destination:</span> <span class="hljs-string">Invert</span> <span class="hljs-string">Match</span> <span class="hljs-string">(ticked)</span><br><span class="hljs-attr">Destination Port Range:</span> <span class="hljs-string">HTTP</span> <span class="hljs-string">(80)</span><br><span class="hljs-attr">Redirect target IP:</span> <span class="hljs-string">Single</span> <span class="hljs-string">host</span> <span class="hljs-number">127.0</span><span class="hljs-number">.0</span><span class="hljs-number">.1</span><br><span class="hljs-attr">Redirect target port:</span> <span class="hljs-string">Other</span> <span class="hljs-number">9040</span><br></code></pre></td></tr></table></figure>
+<p>上面的规则会将LAN网段上的虚拟机对80端口的访问转发到pfSense上的9040端口上，同理，还可以添加其他端口的转发规则，比如HTTPS(443)，最后Save &amp; apply。</p>
+<h2 id="验证TOR">验证TOR</h2>
+<p>完成了上面所介绍的步骤以后，TOR就算搭载完成了。</p>
+<p>但是需要注意的是，国内的网络并不能直接访问TOR网络，因为这中间隔着一道墙。所以如果想要让pfSense将流量路由到TOR网络的话还需要设置前置代理，主要就是能够让pfSense访问到外网。</p>
+<p>所以如果本地网络有socks5服务的话可以在TOR配置文件中添加代理服务。</p>
+<figure class="highlight ruby"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs ruby">Socks5Proxy <span class="hljs-variable constant_">HOST</span><span class="hljs-symbol">:PORT</span><br>Socks5ProxyUsername <span class="hljs-variable constant_">USERNAME</span><br>Socks5ProxyPassword <span class="hljs-variable constant_">PASSWORD</span><br></code></pre></td></tr></table></figure>
+<p>另外，TOR也提供了socks5代理服务，默认在127.0.0.1:9050提供服务，可以在pfSense中使用</p>
+<p><code>curl --socks 127.0.0.1:9050 URL</code></p>
+<p>来进行测试，使用TOR提供的socks5代理服务意味着上面的命令将会走TOR网络访问URL。</p>
+<p>完成配置以后，可以回到前面验证pfSense路由功能的虚拟机中，访问网址：</p>
+<p><a target="_blank" rel="noopener" href="https://check.torproject.org/">https://check.torproject.org/</a></p>
+<p>会得到下面的页面：</p>
+<p><img src="./image/tor_success.png" srcset="/img/loading.gif" lazyload alt="tor success"></p>
+<p>说明虚拟机确实是通过TOR网络访问的该页面。</p>
+<p><em>Ref.</em></p>
+<p><a target="_blank" rel="noopener" href="https://catalyst256.medium.com/dark-web-building-a-tor-gateway-7a7dfa45884f">Dark web: Building a Tor Gateway. In some instances it may be necessary… | by Adam Maxwell | Medium</a></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/experiment-log/" class="category-chain-item">experiment log</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/binary-analysis/">#binary analysis</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>VMware虚拟机搭载TOR出网</div>
+      <div>https://2hyan9.github.io/2023/07/29/VMware虚拟机搭载TOR出网/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>2hYan9</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年7月29日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/03/03/Malware-Analysis-Lab07-02-EXP/" title="Malware Analysis Lab07-02 EXP">
+                        <span class="hidden-mobile">Malware Analysis Lab07-02 EXP</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
