@@ -16,30 +16,25 @@
   <meta name="author" content="2hYan9">
   <meta name="keywords" content="some notes">
   
-    <meta name="description" content="使用已知明文攻击破解弱加密算法 在实习工作中拿到了一个样本，该样本名称为&quot;2023最新财税规定.exe&quot;，SHA256: 36c3405eafd9bdb4c6dd0ca98a2a4779ab34b8777a36b38347316f09109a87e6，该样本在沙箱上检测为木马。 实际分析发现该样本的攻击行为分为多个阶段，然而本文主要是记录第二阶段所释放的加密文件的破解过程。 S">
+    <meta name="description" content="枚举系统进程检测虚拟机环境 在样本分析的工作中遇到了一个样本，该样本通过枚举系统进程来实现反虚拟机的目的，这里简单记录一下。 原理 因为虚拟机一般都安装了vmtools的，而在虚拟机环境中vmtools对应的进程会在后台运行，该进程对应的可执行文件名称为&quot;vmtoolsd.exe&quot;，所以恶意代码可以通过调用一些API来枚举系统内的所有进程，然后查找是否有vmtools的进程在运">
 <meta property="og:type" content="article">
-<meta property="og:title" content="使用已知明文攻击破解弱加密算法">
-<meta property="og:url" content="https://2hyan9.github.io/2023/08/03/%E4%BD%BF%E7%94%A8%E5%B7%B2%E7%9F%A5%E6%98%8E%E6%96%87%E6%94%BB%E5%87%BB%E7%A0%B4%E8%A7%A3%E5%BC%B1%E5%8A%A0%E5%AF%86%E7%AE%97%E6%B3%95/index.html">
+<meta property="og:title" content="枚举系统进程检测虚拟机环境">
+<meta property="og:url" content="https://2hyan9.github.io/2023/08/05/%E6%9E%9A%E4%B8%BE%E7%B3%BB%E7%BB%9F%E8%BF%9B%E7%A8%8B%E6%A3%80%E6%B5%8B%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%8E%AF%E5%A2%83/index.html">
 <meta property="og:site_name" content="TheFuture1sNow">
-<meta property="og:description" content="使用已知明文攻击破解弱加密算法 在实习工作中拿到了一个样本，该样本名称为&quot;2023最新财税规定.exe&quot;，SHA256: 36c3405eafd9bdb4c6dd0ca98a2a4779ab34b8777a36b38347316f09109a87e6，该样本在沙箱上检测为木马。 实际分析发现该样本的攻击行为分为多个阶段，然而本文主要是记录第二阶段所释放的加密文件的破解过程。 S">
+<meta property="og:description" content="枚举系统进程检测虚拟机环境 在样本分析的工作中遇到了一个样本，该样本通过枚举系统进程来实现反虚拟机的目的，这里简单记录一下。 原理 因为虚拟机一般都安装了vmtools的，而在虚拟机环境中vmtools对应的进程会在后台运行，该进程对应的可执行文件名称为&quot;vmtoolsd.exe&quot;，所以恶意代码可以通过调用一些API来枚举系统内的所有进程，然后查找是否有vmtools的进程在运">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://2hyan9.github.io/2023/08/03/%E4%BD%BF%E7%94%A8%E5%B7%B2%E7%9F%A5%E6%98%8E%E6%96%87%E6%94%BB%E5%87%BB%E7%A0%B4%E8%A7%A3%E5%BC%B1%E5%8A%A0%E5%AF%86%E7%AE%97%E6%B3%95/image/stage1.png">
-<meta property="og:image" content="https://2hyan9.github.io/2023/08/03/%E4%BD%BF%E7%94%A8%E5%B7%B2%E7%9F%A5%E6%98%8E%E6%96%87%E6%94%BB%E5%87%BB%E7%A0%B4%E8%A7%A3%E5%BC%B1%E5%8A%A0%E5%AF%86%E7%AE%97%E6%B3%95/image/release_rsrc.png">
-<meta property="og:image" content="https://2hyan9.github.io/2023/08/03/%E4%BD%BF%E7%94%A8%E5%B7%B2%E7%9F%A5%E6%98%8E%E6%96%87%E6%94%BB%E5%87%BB%E7%A0%B4%E8%A7%A3%E5%BC%B1%E5%8A%A0%E5%AF%86%E7%AE%97%E6%B3%95/image/resources.png">
-<meta property="og:image" content="https://2hyan9.github.io/2023/08/03/%E4%BD%BF%E7%94%A8%E5%B7%B2%E7%9F%A5%E6%98%8E%E6%96%87%E6%94%BB%E5%87%BB%E7%A0%B4%E8%A7%A3%E5%BC%B1%E5%8A%A0%E5%AF%86%E7%AE%97%E6%B3%95/image/decryption.png">
-<meta property="og:image" content="https://2hyan9.github.io/2023/08/03/%E4%BD%BF%E7%94%A8%E5%B7%B2%E7%9F%A5%E6%98%8E%E6%96%87%E6%94%BB%E5%87%BB%E7%A0%B4%E8%A7%A3%E5%BC%B1%E5%8A%A0%E5%AF%86%E7%AE%97%E6%B3%95/image/changing_byte.png">
-<meta property="og:image" content="https://2hyan9.github.io/2023/08/03/%E4%BD%BF%E7%94%A8%E5%B7%B2%E7%9F%A5%E6%98%8E%E6%96%87%E6%94%BB%E5%87%BB%E7%A0%B4%E8%A7%A3%E5%BC%B1%E5%8A%A0%E5%AF%86%E7%AE%97%E6%B3%95/image/crack_cipher.png">
-<meta property="og:image" content="https://2hyan9.github.io/2023/08/03/%E4%BD%BF%E7%94%A8%E5%B7%B2%E7%9F%A5%E6%98%8E%E6%96%87%E6%94%BB%E5%87%BB%E7%A0%B4%E8%A7%A3%E5%BC%B1%E5%8A%A0%E5%AF%86%E7%AE%97%E6%B3%95/image/peek_string.png">
-<meta property="article:published_time" content="2023-08-03T03:07:27.000Z">
-<meta property="article:modified_time" content="2023-08-03T06:10:18.319Z">
+<meta property="og:image" content="https://2hyan9.github.io/2023/08/05/%E6%9E%9A%E4%B8%BE%E7%B3%BB%E7%BB%9F%E8%BF%9B%E7%A8%8B%E6%A3%80%E6%B5%8B%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%8E%AF%E5%A2%83/image/vm_detect_on_host.png">
+<meta property="og:image" content="https://2hyan9.github.io/2023/08/05/%E6%9E%9A%E4%B8%BE%E7%B3%BB%E7%BB%9F%E8%BF%9B%E7%A8%8B%E6%A3%80%E6%B5%8B%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%8E%AF%E5%A2%83/image/vm_detect_on_vm.png">
+<meta property="article:published_time" content="2023-08-05T02:11:47.000Z">
+<meta property="article:modified_time" content="2023-08-05T02:42:47.247Z">
 <meta property="article:author" content="2hYan9">
 <meta property="article:tag" content="malware analysis">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://2hyan9.github.io/2023/08/03/%E4%BD%BF%E7%94%A8%E5%B7%B2%E7%9F%A5%E6%98%8E%E6%96%87%E6%94%BB%E5%87%BB%E7%A0%B4%E8%A7%A3%E5%BC%B1%E5%8A%A0%E5%AF%86%E7%AE%97%E6%B3%95/image/stage1.png">
+<meta name="twitter:image" content="https://2hyan9.github.io/2023/08/05/%E6%9E%9A%E4%B8%BE%E7%B3%BB%E7%BB%9F%E8%BF%9B%E7%A8%8B%E6%A3%80%E6%B5%8B%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%8E%AF%E5%A2%83/image/vm_detect_on_host.png">
   
   
   
-  <title>使用已知明文攻击破解弱加密算法 - TheFuture1sNow</title>
+  <title>枚举系统进程检测虚拟机环境 - TheFuture1sNow</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -204,7 +199,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="使用已知明文攻击破解弱加密算法"></span>
+            <span id="subtitle" data-typed-text="枚举系统进程检测虚拟机环境"></span>
           
         </div>
 
@@ -215,8 +210,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2023-08-03 11:07" pubdate>
-          2023年8月3日 上午
+        <time datetime="2023-08-05 10:11" pubdate>
+          2023年8月5日 上午
         </time>
       </span>
     
@@ -227,7 +222,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          2k 字
+          2.9k 字
         
       </span>
     
@@ -238,7 +233,7 @@
         
         
         
-          17 分钟
+          25 分钟
         
       </span>
     
@@ -286,52 +281,51 @@
         <div id="board">
           <article class="post-content mx-auto">
             <!-- SEO header -->
-            <h1 style="display: none">使用已知明文攻击破解弱加密算法</h1>
+            <h1 style="display: none">枚举系统进程检测虚拟机环境</h1>
             
             
               <div class="markdown-body">
                 
-                <h2 id="使用已知明文攻击破解弱加密算法">使用已知明文攻击破解弱加密算法</h2>
-<p>在实习工作中拿到了一个样本，该样本名称为&quot;2023最新财税规定.exe&quot;，SHA256: 36c3405eafd9bdb4c6dd0ca98a2a4779ab34b8777a36b38347316f09109a87e6，该样本在沙箱上检测为木马。</p>
-<p>实际分析发现该样本的攻击行为分为多个阶段，然而本文主要是记录第二阶段所释放的加密文件的破解过程。</p>
-<h3 id="Stage-0-下载器">Stage#0 下载器</h3>
-<p>该样本的第一阶段就是一个下载器，逻辑比较简单，主要就是先检查当前路径，然后自复制并运行，复制完成后从远程FTP服务器上下载第二阶段的恶意代码，加载到内存执行。</p>
-<p><img src="./image/stage1.png" srcset="/img/loading.gif" lazyload alt="stage1"></p>
-<p>所以这里直接将下载的文件dump下来进行分析。</p>
-<h3 id="Stage-1-文件释放">Stage#1 文件释放</h3>
-<p>到了二阶段，这里着重介绍该样本二阶段释放文件的过程。</p>
-<p>二阶段文件存在释放资源节的行为。</p>
-<p><img src="./image/release_rsrc.png" srcset="/img/loading.gif" lazyload alt="release_rsrc"></p>
-<p>并且在云沙箱检查到该样本的资源节的熵值偏高，所以怀疑其资源节可能是加了密的。</p>
-<p>使用Resource Hacker打开样本的资源节，可以发现样本的资源节中存放了多个二进制文件。</p>
-<p><img src="./image/resources.png" srcset="/img/loading.gif" lazyload alt="resources"></p>
-<p>这里面的文件基本都是.dll文件，除了127号文件，可以看出是加密了的。</p>
-<h3 id="密文破解">密文破解</h3>
-<p>因为这个文件是加了密的，并且我没能在二阶段样本中定位到解密的代码（样本使用了某种代码混淆的机制），所以需要先对其进行破解才能进行下一步的分析。</p>
-<p>在破解密文之前，至少需要知道密文加密的方式，其实也就是加密算法，虽然在二阶段没能定位到相关代码。</p>
-<p>但是该样本一阶段有一个解密过程。</p>
-<blockquote>
-<p>样本二阶段在远程主机上是以密文形式保存，所以一阶段将二阶段文件下载下来后还需要进行解密。</p>
-</blockquote>
-<p>所以我们可以猜测这里的密文也是和一阶段的解密流程采用类似的算法。</p>
-<p><img src="./image/decryption.png" srcset="/img/loading.gif" lazyload alt="decryption"></p>
-<p>可以看到样本使用的解密算法其实和维吉尼亚算法类似，只不过将维吉尼亚算法中移位运算换成了按位异或。</p>
-<p>解密使用的密钥是&quot;Ww6&quot;，尝试用这个密钥解密上面的密文，结果当然是失败了。</p>
-<p>不过，因为这个密文大概率是一个PE格式的文件，所以我们能够知道这个密文中的一部分明文。</p>
-<p>比如从第3个字节开始的前面58个字节的取值为：{0x90, 0x00, 0x03, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}，并且在文件第78个字节的偏移处有一个字符串&quot;!This program cannot be run in DOS mode.&quot;。</p>
-<p>有了这部分明文，足够我们进行已知明文攻击了。</p>
-<p>根据上面的加密算法，我们直接将上面这些明文与密文进行异或，可以得到加密这部分明文所使用的密钥。</p>
-<p>异或的结果为：</p>
-<p>{0x34, 0x57, 0x77, 0x33, 0x57, 0x77, 0x3e, 0x57, 0x77, 0x3d, 0x57, 0x77, 0x38, 0x57, 0x77, 0x27, 0x57, 0x77, 0x22, 0x57, 0x77, 0x21, 0x57, 0x77, 0x2c, 0x57, 0x77, 0x2b, 0x57, 0x77, 0x16, 0x57, 0x77, 0x15, 0x57, 0x77, 0x10, 0x57, 0x77, 0x1f, 0x57, 0x77, 0x1a, 0x57, 0x77, 0x19, 0x57, 0x77, 0x04, 0x57, 0x77, 0x03, 0x57, 0x77, 0x0e, 0x57, 0x77, 0x0d, 0x7b, 0x57, 0x77, 0x66, 0x57, 0x77, 0x65, 0x57, 0x77, 0x60, 0x57, 0x77, 0x6f, 0x57, 0x77, 0x6a, 0x57, 0x77, 0x69, 0x57, 0x77, 0x54, 0x57, 0x77, 0x53, 0x57, 0x77, 0x5e, 0x57, 0x77, 0x5d, 0x57, 0x77, 0x58, 0x57, 0x77, 0x47, 0x57, 0x77, 0x42}</p>
-<p>可以看到，这里所使用的密钥周期还是3，但是密钥的第一个字节是在变化的，我们将这些变化的字节单独拿出来看能不能找到一些规律。</p>
-<p><img src="./image/changing_byte.png" srcset="/img/loading.gif" lazyload alt="changing_byte"></p>
-<p>将这些变化的字节放到一起后，还是能够观察出他们的变化规律的，也就是每16个字节进行一次模0x80加0x50的运算。</p>
-<p>有了这些变化规律后，就可以直接对密文进行破解。</p>
-<p><img src="./image/crack_cipher.png" srcset="/img/loading.gif" lazyload alt="crack_cipher"></p>
-<p>破解密文后，杀毒软件会对其报毒，说明我们的破解流程还是正确的。</p>
-<p>放到IDA中查看其字符串，可以看到IDA能够加载该文件，并且字符串中也包含一些特征字符串。</p>
-<p><img src="./image/peek_string.png" srcset="/img/loading.gif" lazyload alt="peek_string"></p>
-<p>这些字符串是Nitol木马家族的特征字符串。</p>
+                <h2 id="枚举系统进程检测虚拟机环境">枚举系统进程检测虚拟机环境</h2>
+<p>在样本分析的工作中遇到了一个样本，该样本通过枚举系统进程来实现反虚拟机的目的，这里简单记录一下。</p>
+<h3 id="原理">原理</h3>
+<p>因为虚拟机一般都安装了vmtools的，而在虚拟机环境中vmtools对应的进程会在后台运行，该进程对应的可执行文件名称为&quot;vmtoolsd.exe&quot;，所以恶意代码可以通过调用一些API来枚举系统内的所有进程，然后查找是否有vmtools的进程在运行，从而检测当前是否运行在虚拟机环境。</p>
+<p>需要使用到的API：</p>
+<ul>
+<li>CreateToolhelp32Snapshot(): 创建指定进程以及这些进程使用的堆、模块和线程的快照。</li>
+<li>Process32First(): 返回有对应系统快照中遇到的第一个进程的信息。</li>
+<li>Process32Next(): 和Process32First()功能一样，不过能够用于循环枚举。</li>
+</ul>
+<p>借助上面这几个API，其实就很容易通过枚举系统进程来实现反虚拟机，实际上，如果运行权限够高的话，还能够关闭某些进程。</p>
+<h3 id="CreateToolhelp32Snapshot">CreateToolhelp32Snapshot()</h3>
+<p>函数原型：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-function">HANDLE <span class="hljs-title">CreateToolhelp32Snapshot</span><span class="hljs-params">(</span></span><br><span class="hljs-params"><span class="hljs-function">  [in] DWORD dwFlags,</span></span><br><span class="hljs-params"><span class="hljs-function">  [in] DWORD th32ProcessID</span></span><br><span class="hljs-params"><span class="hljs-function">)</span></span>;<br></code></pre></td></tr></table></figure>
+<p>参数：</p>
+<p><code>dwFlags</code>：用以指定包含在快照中的范围</p>
+<p><code>th32ProcessID</code>：用以指定某个需要被包含在快照中的进程</p>
+<p>我们这里将<code>dwFlags</code>的取值设置为 TH32CS_SNAPPROCESS(0X2)，即系统内所有的进程都包含在创建的快照中。</p>
+<p>对于第二个参数，其实就不用管，因为 <code>th32ProcessID</code> 只有当 <code>dwFlags</code> 的取值为 { TH32CS_SNAPHEAPLIST**, <strong>TH32CS_SNAPMODULE</strong>, **TH32CS_SNAPMODULE32, TH32CS_SNAPALL} 中的一个时才有效，其他情况下，这个参数都会被忽略。</p>
+<h3 id="Process32First-Next">Process32First&amp;Next()</h3>
+<p>函数原型：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-function">BOOL <span class="hljs-title">Process32First</span><span class="hljs-params">(</span></span><br><span class="hljs-params"><span class="hljs-function">  [in]      HANDLE           hSnapshot,</span></span><br><span class="hljs-params"><span class="hljs-function">  [in, out] LPPROCESSENTRY32 lppe</span></span><br><span class="hljs-params"><span class="hljs-function">)</span></span>;<br><span class="hljs-function">BOOL <span class="hljs-title">Process32Next</span><span class="hljs-params">(</span></span><br><span class="hljs-params"><span class="hljs-function">  [in]  HANDLE           hSnapshot,</span></span><br><span class="hljs-params"><span class="hljs-function">  [out] LPPROCESSENTRY32 lppe</span></span><br><span class="hljs-params"><span class="hljs-function">)</span></span>;<br></code></pre></td></tr></table></figure>
+<p>参数：</p>
+<p><code>hSnapshot</code>：使用CreateToolhelp32Snapshot()创建的快照的句柄</p>
+<p><code>lppe</code>：指向 PROCESSENTRY32 结构类型的指针</p>
+<p>返回值：</p>
+<p>如果成功，则将对应进程的相关信息复制到<code>lppe</code> 指针指向的PROCESSENTRY32结构体变量中，并返回true，否则返回false。</p>
+<p>PROCESSENTRY32</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs C++"><span class="hljs-keyword">typedef</span> <span class="hljs-keyword">struct</span> <span class="hljs-title class_">tagPROCESSENTRY32</span> &#123;<br>  DWORD     dwSize;<br>  DWORD     cntUsage;<br>  DWORD     th32ProcessID;<br>  ULONG_PTR th32DefaultHeapID;<br>  DWORD     th32ModuleID;<br>  DWORD     cntThreads;<br>  DWORD     th32ParentProcessID;<br>  LONG      pcPriClassBase;<br>  DWORD     dwFlags;<br>  CHAR      szExeFile[MAX_PATH];<br>&#125; PROCESSENTRY32;<br></code></pre></td></tr></table></figure>
+<p><strong>注意：</strong> <code>dwSize</code> 参数，这个参数表示这个结构体的大小，在调用Process32First()之前, 需要将这个参数设置为<code>sizeof(PROCESSENTRY32)</code>，否则如果不初始化这个参数，Process32First()的调用将会失败.</p>
+<p>这里我们比较关系的成员其实就是<code>szExeFile</code>，这个成员就是进程对应的可执行文件名称。</p>
+<h3 id="实例">实例</h3>
+<p>下面我们将检查系统内所有进程对应的可执行文件的名称来实现虚拟机环境检测。</p>
+<p>源码如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;iostream&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;Windows.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;TlHelp32.h&gt;</span></span><br><br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span><br><span class="hljs-function"></span>&#123;<br>    HANDLE hSnapShot;<br>    PROCESSENTRY32 ppe;<br><br>    ppe.dwSize = <span class="hljs-built_in">sizeof</span>(PROCESSENTRY32);<br><br>    <span class="hljs-keyword">if</span> (hSnapShot = <span class="hljs-built_in">CreateToolhelp32Snapshot</span>(TH32CS_SNAPPROCESS, <span class="hljs-number">0x0</span>))<br>    &#123;<br>        <span class="hljs-keyword">if</span> (<span class="hljs-built_in">Process32First</span>(hSnapShot, &amp;ppe)) <br>        &#123;<br>            <span class="hljs-keyword">do</span><br>            &#123;<br>                <span class="hljs-keyword">if</span> (ppe.szExeFile[<span class="hljs-number">0x0</span>] == <span class="hljs-string">&#x27;v&#x27;</span> &amp;&amp;<br>                    ppe.szExeFile[<span class="hljs-number">0x1</span>] == <span class="hljs-string">&#x27;m&#x27;</span> &amp;&amp;<br>                    ppe.szExeFile[<span class="hljs-number">0x2</span>] == <span class="hljs-string">&#x27;t&#x27;</span> &amp;&amp;<br>                    ppe.szExeFile[<span class="hljs-number">0x3</span>] == <span class="hljs-string">&#x27;o&#x27;</span> &amp;&amp;<br>                    ppe.szExeFile[<span class="hljs-number">0x4</span>] == <span class="hljs-string">&#x27;o&#x27;</span> &amp;&amp;<br>                    ppe.szExeFile[<span class="hljs-number">0x5</span>] == <span class="hljs-string">&#x27;l&#x27;</span> &amp;&amp;<br>                    ppe.szExeFile[<span class="hljs-number">0x6</span>] == <span class="hljs-string">&#x27;s&#x27;</span> &amp;&amp;<br>                    ppe.szExeFile[<span class="hljs-number">0x7</span>] == <span class="hljs-string">&#x27;d&#x27;</span> &amp;&amp;<br>                    ppe.szExeFile[<span class="hljs-number">0x8</span>] == <span class="hljs-string">&#x27;.&#x27;</span> &amp;&amp;<br>                    ppe.szExeFile[<span class="hljs-number">0x9</span>] == <span class="hljs-string">&#x27;e&#x27;</span> &amp;&amp;<br>                    ppe.szExeFile[<span class="hljs-number">0xa</span>] == <span class="hljs-string">&#x27;x&#x27;</span> &amp;&amp;<br>                    ppe.szExeFile[<span class="hljs-number">0xb</span>] == <span class="hljs-string">&#x27;e&#x27;</span>)<br>                &#123;<br>                    <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;Virutal Machine Detected, pid: %d\n&quot;</span>, ppe.th32ProcessID);<br>                    <span class="hljs-built_in">system</span>(<span class="hljs-string">&quot;pause&quot;</span>);<br>                &#125;<br>            &#125; <span class="hljs-keyword">while</span> (<span class="hljs-built_in">Process32Next</span>(hSnapShot, &amp;ppe));<br>        &#125;<br>        <span class="hljs-keyword">else</span><br>        &#123;<br>            <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;Failed to list the first process.\n&quot;</span>);<br>            <span class="hljs-built_in">exit</span>(EXIT_FAILURE);<br>        &#125;<br>    &#125;<br>    <span class="hljs-keyword">else</span><br>    &#123;<br>        <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;Failed to create snapshot.\n&quot;</span>);<br>        <span class="hljs-built_in">exit</span>(EXIT_FAILURE);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>编译后在物理机中运行，结果自然是没有检出的，如下：</p>
+<p><img src="./image/vm_detect_on_host.png" srcset="/img/loading.gif" lazyload alt="vm detect on host"></p>
+<p>再放到虚拟机中运行，结果是检出了虚拟机环境，如下：</p>
+<p><img src="./image/vm_detect_on_vm.png" srcset="/img/loading.gif" lazyload alt="vm detect on vm"></p>
+<p>可以看到，枚举系统进程来检测虚拟机环境确实是易于实施的。</p>
 
                 
               </div>
@@ -377,8 +371,8 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>使用已知明文攻击破解弱加密算法</div>
-      <div>https://2hyan9.github.io/2023/08/03/使用已知明文攻击破解弱加密算法/</div>
+      <div>枚举系统进程检测虚拟机环境</div>
+      <div>https://2hyan9.github.io/2023/08/05/枚举系统进程检测虚拟机环境/</div>
     </div>
     <div class="license-meta">
       
@@ -390,7 +384,7 @@
       
         <div class="license-meta-item license-meta-date">
           <div>发布于</div>
-          <div>2023年8月3日</div>
+          <div>2023年8月5日</div>
         </div>
       
       
@@ -422,18 +416,12 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2023/08/05/%E6%9E%9A%E4%B8%BE%E7%B3%BB%E7%BB%9F%E8%BF%9B%E7%A8%8B%E6%A3%80%E6%B5%8B%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%8E%AF%E5%A2%83/" title="枚举系统进程检测虚拟机环境">
-                        <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">枚举系统进程检测虚拟机环境</span>
-                        <span class="visible-mobile">上一篇</span>
-                      </a>
-                    
                   </article>
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2023/07/29/VMware%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%90%AD%E8%BD%BDTOR%E5%87%BA%E7%BD%91/" title="VMware虚拟机搭载TOR出网">
-                        <span class="hidden-mobile">VMware虚拟机搭载TOR出网</span>
+                      <a href="/2023/08/03/%E4%BD%BF%E7%94%A8%E5%B7%B2%E7%9F%A5%E6%98%8E%E6%96%87%E6%94%BB%E5%87%BB%E7%A0%B4%E8%A7%A3%E5%BC%B1%E5%8A%A0%E5%AF%86%E7%AE%97%E6%B3%95/" title="使用已知明文攻击破解弱加密算法">
+                        <span class="hidden-mobile">使用已知明文攻击破解弱加密算法</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
