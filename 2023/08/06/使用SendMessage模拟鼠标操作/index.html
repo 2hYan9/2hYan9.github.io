@@ -25,7 +25,7 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://2hyan9.github.io/2023/08/06/%E4%BD%BF%E7%94%A8SendMessage%E6%A8%A1%E6%8B%9F%E9%BC%A0%E6%A0%87%E6%93%8D%E4%BD%9C/image/mouse_clicking_simulation.png">
 <meta property="article:published_time" content="2023-08-06T11:19:45.000Z">
-<meta property="article:modified_time" content="2023-08-06T13:20:22.626Z">
+<meta property="article:modified_time" content="2023-08-07T02:01:31.358Z">
 <meta property="article:author" content="2hYan9">
 <meta property="article:tag" content="malware analysis">
 <meta name="twitter:card" content="summary_large_image">
@@ -221,7 +221,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          4.1k 字
+          4.2k 字
         
       </span>
     
@@ -431,6 +431,7 @@
 <p><img src="./image/mouse_clicking_simulation.png" srcset="/img/loading.gif" lazyload alt="mouse clicking simulation"></p>
 <p>注意上面的代码中，在使用ShellExecuteA()时，将<code>fMask</code>指定为&quot;SEE_MASK_FLAG_NO_UI&quot;，意即不要显示UI界面，即使是错误对话框，使用这个掩码是为了提高隐蔽性。</p>
 <p>但是使用这个掩码后，得到的窗口也是未激活状态的，所以需要使用MS_ACTIVATE来激活窗口。</p>
+<p>另外，在创建进城后，FindWindow()并不能马上找到对应窗口，所以需要将寻找窗口的函数写在一个循环体中。</p>
 
                 
               </div>
