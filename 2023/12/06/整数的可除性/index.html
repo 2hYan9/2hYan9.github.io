@@ -1,0 +1,738 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="2hYan9">
+  <meta name="keywords" content="some notes">
+  
+    <meta name="description" content="整数的可除性 整除 定义：设a，b是两个任意的正整数，其中b$\neq$0，若存在一个整数q，使得：a&#x3D;qb 则称b整除a，记为b | a。 整除的运算定理 1.设a, b, c$\neq$0是三个整数，若 c | a, c | b，则对任意整数s, t有：c | (sa+tb) 2.设a, b都是非零整数，若a | b，b | a，则a &#x3D; $\pm$b ####Eratoshenes筛法 **">
+<meta property="og:type" content="article">
+<meta property="og:title" content="整数的可除性">
+<meta property="og:url" content="https://2hyan9.github.io/2023/12/06/%E6%95%B4%E6%95%B0%E7%9A%84%E5%8F%AF%E9%99%A4%E6%80%A7/index.html">
+<meta property="og:site_name" content="TheFuture1sNow">
+<meta property="og:description" content="整数的可除性 整除 定义：设a，b是两个任意的正整数，其中b$\neq$0，若存在一个整数q，使得：a&#x3D;qb 则称b整除a，记为b | a。 整除的运算定理 1.设a, b, c$\neq$0是三个整数，若 c | a, c | b，则对任意整数s, t有：c | (sa+tb) 2.设a, b都是非零整数，若a | b，b | a，则a &#x3D; $\pm$b ####Eratoshenes筛法 **">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2023-12-06T05:15:22.000Z">
+<meta property="article:modified_time" content="2023-12-06T05:24:22.138Z">
+<meta property="article:author" content="2hYan9">
+<meta property="article:tag" content="mathematics">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>整数的可除性 - TheFuture1sNow</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"2hyan9.github.io","root":"/","version":"1.9.3","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"left","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>2hYan9</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="整数的可除性"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-12-06 13:15" pubdate>
+          2023年12月6日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          3k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          25 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="padding-left: 2rem; margin-right: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">整数的可除性</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="整数的可除性">整数的可除性</h2>
+<h3 id="整除">整除</h3>
+<p><strong>定义</strong>：设a，b是两个任意的正整数，其中b$\neq$0，若存在一个整数q，使得：a=qb<br>
+则称b整除a，记为b | a。<br>
+<strong>整除的运算定理</strong><br>
+1.设a, b, c$\neq$0是三个整数，若 c | a, c | b，则对任意整数s, t有：c | (sa+tb)<br>
+2.设a, b都是非零整数，若a | b，b | a，则a = $\pm$b<br>
+####Eratoshenes筛法<br>
+**定理：**设n是一个正合数，p是n的一个大于1的最小正因数，则p一定是素数且$p\leq\sqrt{n}$<br>
+**Eratoshene筛法：**设n是正整数，如果对所有素数$p\leq\sqrt{n}$都有p$\nmid$n，则n一定是素数。</p>
+<blockquote>
+<p>证明：显而易见，如果第一个定理是成立的，那么就很容易得到Eratoshenes筛法，所以这里只需要证明第一个定理<br>
+反证法，假设n的大于1的最小正因数p是合数，那么显然$\exists$q&gt;1， q | p，则有q | n，所以q也是n的一个大于1的正因数，且q&lt;p，这与p是n的大于1的最小正因数的前提相违，故p是素数。<br>
+对于第二个部分同样使用反证法，假设n的大于1的最小正因数$p&gt;\sqrt{n}$，因为p是n的因数，所以可以设n=pq<br>
+$\because$p是n的最小正因数<br>
+$\therefore q&gt;p&gt;\sqrt{n}$<br>
+则$pq&gt;\sqrt{n}*\sqrt{n}=n$，这与前提条件相违背<br>
+故$p\leq\sqrt{n}$</p>
+</blockquote>
+<h3 id="欧几里得除法">欧几里得除法</h3>
+<p>设a，b是两个整数，其中b&gt;0，则存在唯一的整数q，r，使得a=qb+r且$0\leq r &lt;b$</p>
+<blockquote>
+<p>证明：存在性<br>
+可以将数轴分成无数个长度为b的区间，即$\cdots,-2b,-b,0,b,2b,\cdots$<br>
+则整数a必然落在其中的一个区间上<br>
+$\therefore\exists q$使得$qb\leq a &lt; (q+1)b$<br>
+令$r=a-qb$，则$a=qb+r$<br>
+唯一性<br>
+假设分别有整数$q,r,q_1,r_1$使得：<br>
+$a=qb+r$ $(0\leq r&lt;b)$<br>
+$a=q_1b+r_1$ $(0\leq r_1&lt;b)$<br>
+则$(q-q_1)b=-(r-r_1)$<br>
+如果$q\neq q_1$则$|(q-q_1)b|\geq b$，而$|-(r-r_1)|&lt;b$，显然矛盾<br>
+故$q=q_1$ $r=r_1$</p>
+</blockquote>
+<p>**定理：**设a,b,c是三个全不为零的整数，如果存在整数q使得a=qb+c，则(a,b)=(b,c)</p>
+<blockquote>
+<p>证明：设d=(a,b)，则d | a，d | b，由整除的运算定理可知：<br>
+d | (a-qb)，d | c<br>
+$\therefore$d是b，c的一个公因数<br>
+设d’=(b,c)，则d$\leq$d’且d’ | b，d’ | c<br>
+则d’ | (qb+c)，d’ | a<br>
+$\therefore$d’是a,b的一个公因数，则d’$\leq$d<br>
+$\therefore$d=d’<br>
+即(a,b)=(b,c)</p>
+</blockquote>
+<p>**广义欧几里得除法：**设a,b是两个任意的正整数，记$r_{-2}=a, r_{-1}=b$，则反复运用欧几里得除法有：<br>
+$r_{-2}=q_0r_{-1}+r_0$<br>
+$r_{-1}=q_1r_0+r_1$<br>
+$\dots$<br>
+$r_{n-1}=q_{n+1}r_n+r_{n+1}$<br>
+$r_n=q_{n+2}r_{n+1}+0$<br>
+则$r_{n+1}$是a,b的最大公因数<br>
+通过上面的定理就很容易得到广义欧几里得除法的证明<br>
+**贝祖等式：**设a,b是任意的两个正整数，则存在整数s,t使得sa+tb=(a,b)</p>
+<p>贝祖等式的证明同样可以由广义欧几里得除法得到，因为广义欧几里得除法得出了一系列的等式，而$r_{n+1}$就等于(a,b)，那么在上面的等式用$r_{n+1}$依次向上取代便可得到贝祖等式</p>
+<p>**定理：**整数a,b互素的充分必要条件是存在整数s,t使得sa+tb=1</p>
+<blockquote>
+<p>证明：必要性，不难证明，(a,b)=1$\rightarrow$ sa+tb=1<br>
+充分性<br>
+设d | a, d | b<br>
+$\because$sa+tb=1<br>
+$\therefore$d | (sa+tb) = 1<br>
+$\therefore$d = 1<br>
+也就是说只有1能够同时整除a,b，即(a,b)=1</p>
+</blockquote>
+<h3 id="算术基本定理">算术基本定理</h3>
+<p>任意整数n&gt;1都可以表示成素数的乘积，且不考虑乘积顺序的情况下，该表达式是唯一的，即$n=p_1\cdots p_s$，其中$p_1\leq\cdots\leq p_s$<br>
+**标准分解式：**任意整数n&gt;1可以唯一的表示成：$n=p_1^{a_1}\cdots p_s^{a_s}$，其中$a_i$&gt;0，$p_i&lt;p_j(i&lt;j)$是素数。</p>
+<p>**定理：**设a,b是两个正整数，且都有素数因数分解式<br>
+$a=p_1^{a_1}\cdots p_s^{a_s}$<br>
+$b=p_1^{b_1}\cdots p_s^{b_s}$<br>
+则a,b的最大公因数和最小公倍数为：<br>
+$(a,b)=p_1^{\varphi_1}\cdots p_s^{\varphi_s}$，其中$\varphi_i=min(a_i,b_i),i=1,\dots,s$<br>
+$[a,b]=p_1^{\psi_1}\cdots p_s^{\psi_s}$，其中$\psi_i=max(a_i,b_i),i=1,\dots,s$</p>
+<p>推论1：(a,b)[a,b]=a,b</p>
+<blockquote>
+<p>证明.<br>
+$\because(a,b)=p_1^{\varphi_1}\cdots p_s^{\varphi_s}$<br>
+$[a,b]=p_1^{\psi_1}\cdots p_s^{\psi_s}$<br>
+$\therefore (a,b)[a,b]=p_1^{\varphi_1+\psi_1}\cdots p_s^{\varphi_s+\psi_s}$<br>
+而$\varphi_i=min(a_i,b_i)$，$\psi_i=max(a_i,b_i)$<br>
+$\because max(a,b)+min(a,b)=a+b$<br>
+$\therefore \varphi_i+\psi_i=a_i+b_i$<br>
+$\therefore (a,b)[a,b]=p_1^{a_i+b_i}\cdots p_s^{a_s+b_s}=ab$</p>
+</blockquote>
+<p>推论2：$\frac{a}{(a,b)}$与$\frac{b}{(a,b)}$互素</p>
+<blockquote>
+<p>证明.<br>
+$\because (a,b)=p_1^{\varphi_1}\cdots p_s^{\varphi_s}(\varphi_i=mid(\alpha_i,\beta_i))$<br>
+$\therefore \frac{a}{(a,b)}=p_1^{\alpha_1-mid(\alpha_1,\beta_1)}\cdots p_s^{\alpha_s-mid(\alpha_s,\beta_s)}$<br>
+$\frac{b}{(a,b)}=p_1^{\beta_1-mid(\alpha_1,\beta_1)}\cdots p_s^{\beta_s-mid(\alpha_s,\beta_s)}$<br>
+$\because mid(a-mid(a,b),b-mid(a,b))=0$<br>
+$\therefore (\frac{a}{(a,b)},\frac{b}{(a,b)})=p_1^0\cdots p_s^0=1$<br>
+即$\frac{a}{(a,b)}$与$\frac{b}{(a,b)}$互素</p>
+</blockquote>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/notes/" class="category-chain-item">notes</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/mathematics/">#mathematics</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>整数的可除性</div>
+      <div>https://2hyan9.github.io/2023/12/06/整数的可除性/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>2hYan9</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年12月6日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/12/06/%E5%90%8C%E4%BD%99/" title="同余">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">同余</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/08/06/%E4%BD%BF%E7%94%A8SendMessage%E6%A8%A1%E6%8B%9F%E9%BC%A0%E6%A0%87%E6%93%8D%E4%BD%9C/" title="使用SendMessage()模拟鼠标操作">
+                        <span class="hidden-mobile">使用SendMessage()模拟鼠标操作</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

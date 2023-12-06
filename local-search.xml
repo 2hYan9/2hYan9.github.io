@@ -4,6 +4,56 @@
   
   
   <entry>
+    <title>同余</title>
+    <link href="/2023/12/06/%E5%90%8C%E4%BD%99/"/>
+    <url>/2023/12/06/%E5%90%8C%E4%BD%99/</url>
+    
+    <content type="html"><![CDATA[<h2 id="同余">同余</h2><h3 id="同余-2">同余</h3><p>**定义：**设m是一个正整数，设a，b是两个整数，则a$\equiv$b  (mod m)，当且仅当 m | (a-b)，称a, b模m同余。<br>换句话说，a, b模m同余当且仅当a, b用欧几里得除法除以m得到的余数相等。</p><p>**同余的保运算性：**设m是一个正整数，设$a_1,b_1,a_2,b_2$有：<br>$a_1\equiv b_1$(mod m)<br>$a_2\equiv b_2$(mod m)，则：<br>$a_1+a_2\equiv b_1+b_2$(mod m)<br>$a_1\cdot a_2\equiv b_1\cdot b_2$(mod m)</p><p><strong>同余的性质：</strong><br>设m是一个正整数，设$d\cdot a\equiv d\cdot b$ (mod m)，如果(d, m)=1，则a$\equiv$b (mod m)</p><p>设m是一个正整数，设a$\equiv$b (mod m)，d &gt; 0，则$d\cdot a\equiv d\cdot b$ (mod m)</p><p>设m是一个正整数，设a$\equiv$b (mod m)，如果d$\mid$m，则a$\equiv$b (mod d)</p><p>设$m_1,\cdots, m_k$是k个正整数，设a$\equiv$b (mod $m_i$) 其中$i=1\cdots k$，<br>则a$\equiv$b (mod[$m_1,\cdots m_k$])<br>####剩余类<br>设m是一个正整数，对任意整数a，令<br>$C_a=\lbrace c|c\in Z, c\equiv a (mod\space m) \rbrace$，则不难证明：<br>i.任意一个整数必然包含在一个$C_r$中，$0\le r\le m$<br>ii.$C_a=C_b$的充分必要条件是：a$\equiv$b (mod m)<br>iii.$C_a$与$C_b$的交集非空的充分必要条件是：a$\ne$b (mod m)</p><p><strong>Notation：</strong>$C_a$叫做模m的a的剩余类，一个剩余类中的任意一个数叫做该类的剩余或代表元。</p><h3 id="完全剩余系">完全剩余系</h3><p>若$r_0, \cdots r_{m-1}$是m个整数，并且其中人恶化两个数都不在同一个剩余类里，则称$r_0,\cdots r_{m-1}$为模 m 的一个完全剩余系。</p><p><strong>完全剩余系的性质：</strong><br>设m是一个正整数，a是满足(a, m)=1的整数，b是任意一个整数，若集合k是遍历模m的一个完全剩余系，则ak+b也是遍历模m的一个完全剩余系。</p><p>设$m_1, m_2$是两个互素的正整数，若$k_1, k_2$分别遍历模$m_1, m_2$的完全剩余系，则$m_2k_1+m_1k_2$是遍历模$m_1m_2$的一个完全剩余系。</p><blockquote><p>证明.<br>要证明$m_2k_1+m_1k_2$是遍历模$m_1m_2$的一个完全剩余系，只需要证明$m_2k_1+m_1k_2$中的任意两个数不同余<br>反证法：设存在正整数$k_1,k_2$和$k_1’, k_2’$满足：<br>$m_2k_1+m_1k_2\equiv m_2k_1’+m_1k_2’$ (mod $m_1m_2$)<br>则由同余的性质可以得到：<br>$m_2k_1+m_1k_2\equiv m_2k_1’+m_1k_2’$ (mod $m_1$)<br>$m_2k_1\equiv m_2k_1’$ (mod $m_1$)<br>$\therefore m_1\mid (m_2k_1-m_2k_1’)$<br>$m_1\mid m_2(k_1-k_1’)$<br>$\because (m_1,m_2)=1$<br>$\therefore m_1\mid (k_1-k_1’)$<br>$\therefore k_1\equiv k_1’$ (mod $m_1$)<br>同理可得$k_2\equiv k_2’$ (mod $m_2$)<br>这与一个完全剩余系中的任意两个数不同余的事实相反</p></blockquote><h3 id="简化剩余系">简化剩余系</h3><p>简化剩余系就是把一个模m的完全剩余系中与m互素的数挑出来组成一个新的剩余系，称为简化剩余系。<br>形式化的定义就是设m是一个正整数，若$r_1,\cdots, r_t$是t个与m互素的正整数且两两模m不同余，则$r_1,\cdots, r_t$是模m的一个简化剩余系。</p><p><strong>简化剩余系的性质：</strong><br>设m是一个正整数，a是满足(a,m)=1的整数，如果k是遍历模m的一个简化剩余系，则$a\cdot k$也是遍历模m的简化剩余系</p><p>设$m_1,m_2$是两个互素的正整数，如果$k_1,k_2$分别遍历模$m_1$和模$m_2$的简化剩余系，则$m_2k_1+m_1k_2$也是遍历模$m_1\cdot m_2$的简化剩余系</p><h3 id="欧拉函数">欧拉函数</h3><p>设m是一个正整数，则m个整数$1,\cdots,m-1,m$中与m互素的整数的个数，记作$\varphi(m)$，叫做欧拉函数<br><strong>欧拉函数的性质：</strong><br>1）显然，当m是一个素数的时候$\varphi(m)=m-1$</p><p>2）设m, n是互素的两个正整数，则$\varphi(m\cdot n)=\varphi(m)\cdot\varphi(n)$</p><p>3）对于素数幂$m=p^a$有：<br>$\varphi(m)=p^a-p^{a-1}=p^a(1-\frac{1}{p})$</p><blockquote><p>证明.<br>将$1,2,\cdots p^a$划分成$p^{a-1}$份长度为p的数组，则每个数组可以按照剩余系的概念等价于$1,2,\cdots p$<br>而$1,2,\cdots p$中，只有p与p不互素，那么也只有p与$p^a$不互素<br>$\therefore 1,2,\cdots, p^a$中与$p^a$不互素的整数个数为:<br>$\varphi(p^a)=p^a-p^{a-1}=p^a(1-\frac{1}{p})$</p></blockquote><h3 id="欧拉定理">欧拉定理</h3><p>设m是大于1的整数，如果a是满足(a,m)=1的整数，则$a^{\varphi(m)}\equiv 1(mod\space m)$</p><blockquote><p>证明.<br>设$r_1,r_2,\cdots r_{\varphi(m)}$是模m的一个最小简化剩余系<br>$\because (a,m)=1$<br>$\therefore ar_1,ar_2,\cdots ar_{\varphi(m)}$也是模m的一个简化剩余系<br>$\therefore ar_1\cdot ar_2\cdots ar_{\varphi(m)}\equiv r_1\cdot r_2\cdots r_{\varphi(m)}$ (mod m)<br>$a^{\varphi(m)}r_1\cdot r_2\cdots r_{\varphi(m)}\equiv r_1\cdot r_2\cdots r_{\varphi(m)}$ (mod m)<br>$(a^{\varphi(m)}-1)r_1\cdot r_2\cdots r_{\varphi(m)}\equiv 0$ (mod m)<br>又$\because r_1,r_2,\cdots r_{\varphi(m)}$是模m的最小简化剩余系<br>$\therefore (r_1,m)=(r_2,m)=\cdots=(r_{\varphi(m)},m)=1$<br>$(r_1\cdot r_2\cdots r_{\varphi(m)},m)=1$<br>$\therefore a^{\varphi(m)}-1\equiv 0$(mod m)<br>$a^{\varphi(m)}\equiv 1$(mod m)</p></blockquote><h3 id="费马小定理">费马小定理</h3><p>设p是一个素数，则对任意整数a，有<br>$a^p\equiv a$ (mod p)</p><blockquote><p>证明.<br>i)若(a,p)$\ne$1<br>$\because$p是素数<br>$\therefore p\mid a$<br>即a$\equiv$0 (mod p)<br>$a^p\equiv$0 (mod p)<br>$a^p\equiv a\equiv $0 (mod m)<br>ii)若(a,p) = 1<br>$\because$p是素数<br>$\therefore\varphi§=p-1$<br>由欧拉定理知$a^{\varphi(m)}\equiv 1$ (mod p)<br>$a^{p-1}\equiv 1$ (mod p)<br>$a^p\equiv a$ (mod p)</p></blockquote><h3 id="Wilson定理">Wilson定理</h3><p>设p是一个素数，则(p-1)!$\equiv$ -1 (mod p)</p><p>想要证明上面的定理需要先证明另一个定理：设m是一个正整数，a是满足(a,m)=1的整数，则存在唯一的整数a’，1$\le$a’&lt;m，使得a·a’$\equiv$1 (mod m)</p><blockquote><p>证明.<br>存在性：设$r_1,r_2,\cdots ,r_{\varphi(m)}$是模m的一个最小简化剩余系<br>$\because (a,m)=1$<br>$\therefore ar_1,ar_2,\cdots ar_{\varphi(m)}$也是模m的一个简化剩余系<br>当然，模m的简化剩余系中必然存在$ar_n\equiv$1 (mod m)<br>唯一性：假设模m的最小简化剩余系中有a’, a’‘, 1$\le$a’,a’‘&lt;m 使得<br>a·a’$\equiv$1 (mod m)<br>a·a’‘$\equiv$1 (mod m)，则<br>a(a’-a’‘)$\equiv$ 0 (mod m)<br>a’-a’‘$\equiv$0 (mod m)<br>a’$\equiv$a’’ (mod m)</p></blockquote><p>有了上述的定理后，可以开始证明Wilson定理：</p><blockquote><p>证明.<br>设p是一个素数，则任意1$\le$a &lt; p，存在唯一的1$\le$a’ &lt; p<br>使得a·a’$\equiv$1 (mod p)<br>而a=a’的充要条件是$a^2\equiv$1 (mod m)<br>则a=1或a=p-1<br>$\therefore (p-1)!\equiv1\cdot2\cdots (p-1)\equiv1\cdot(p-1)\Pi a\cdot a’$<br>$\equiv1(p-1)\equiv(-1)$ (mod m)</p></blockquote><h3 id="模重复平方计算">模重复平方计算</h3><p>问题：如果计算$b^n$(mod m)其中n是一个大的整数。<br>由于n是一个大整数，所以无法直接通过欧几里得除法计算$b^n$模m的余数</p><p>首先可以通过欧拉定理将n缩小成一个小于$\varphi(m)$的整数<br>如果$b^n$还是大到无法直接计算，那么就采用下面的方法进行计算：<br>将n写成一个二进制形式，即：<br>$n=n_0+n_1\cdot 2+n_2\cdot 2^2+\cdots +n_{k-1}2^{k-1}$<br>由科学计数法的性质可知$n_{k-1}$必然等于1<br>令整数a=1<br>1.如果$n_0=1$，则$a_0\equiv(a\cdot b)$ (mod m)，否则$a_0\equiv a$ (mod m)<br>令$b_1\equiv b^2$ (mod m)<br>2.如果$n_1=1$，则$a_1\equiv(a_0\cdot b_1)$ (mod m)，否则$a_1\equiv a_0$ (mod m)<br>令$b_2\equiv b_1^2$ (mod m)<br>$\cdots$<br>k.因为$n_{k-1}=1$，所以$a_{k-1}\equiv (a_{k-2}\cdot b_{k-1})$ (mod m)</p><p>最终$b^n\equiv a_{k-1}$ (mod m)</p>]]></content>
+    
+    
+    <categories>
+      
+      <category>notes</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>mathematics</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>整数的可除性</title>
+    <link href="/2023/12/06/%E6%95%B4%E6%95%B0%E7%9A%84%E5%8F%AF%E9%99%A4%E6%80%A7/"/>
+    <url>/2023/12/06/%E6%95%B4%E6%95%B0%E7%9A%84%E5%8F%AF%E9%99%A4%E6%80%A7/</url>
+    
+    <content type="html"><![CDATA[<h2 id="整数的可除性">整数的可除性</h2><h3 id="整除">整除</h3><p><strong>定义</strong>：设a，b是两个任意的正整数，其中b$\neq$0，若存在一个整数q，使得：a=qb<br>则称b整除a，记为b | a。<br><strong>整除的运算定理</strong><br>1.设a, b, c$\neq$0是三个整数，若 c | a, c | b，则对任意整数s, t有：c | (sa+tb)<br>2.设a, b都是非零整数，若a | b，b | a，则a = $\pm$b<br>####Eratoshenes筛法<br>**定理：**设n是一个正合数，p是n的一个大于1的最小正因数，则p一定是素数且$p\leq\sqrt{n}$<br>**Eratoshene筛法：**设n是正整数，如果对所有素数$p\leq\sqrt{n}$都有p$\nmid$n，则n一定是素数。</p><blockquote><p>证明：显而易见，如果第一个定理是成立的，那么就很容易得到Eratoshenes筛法，所以这里只需要证明第一个定理<br>反证法，假设n的大于1的最小正因数p是合数，那么显然$\exists$q&gt;1， q | p，则有q | n，所以q也是n的一个大于1的正因数，且q&lt;p，这与p是n的大于1的最小正因数的前提相违，故p是素数。<br>对于第二个部分同样使用反证法，假设n的大于1的最小正因数$p&gt;\sqrt{n}$，因为p是n的因数，所以可以设n=pq<br>$\because$p是n的最小正因数<br>$\therefore q&gt;p&gt;\sqrt{n}$<br>则$pq&gt;\sqrt{n}*\sqrt{n}=n$，这与前提条件相违背<br>故$p\leq\sqrt{n}$</p></blockquote><h3 id="欧几里得除法">欧几里得除法</h3><p>设a，b是两个整数，其中b&gt;0，则存在唯一的整数q，r，使得a=qb+r且$0\leq r &lt;b$</p><blockquote><p>证明：存在性<br>可以将数轴分成无数个长度为b的区间，即$\cdots,-2b,-b,0,b,2b,\cdots$<br>则整数a必然落在其中的一个区间上<br>$\therefore\exists q$使得$qb\leq a &lt; (q+1)b$<br>令$r=a-qb$，则$a=qb+r$<br>唯一性<br>假设分别有整数$q,r,q_1,r_1$使得：<br>$a=qb+r$ $(0\leq r&lt;b)$<br>$a=q_1b+r_1$ $(0\leq r_1&lt;b)$<br>则$(q-q_1)b=-(r-r_1)$<br>如果$q\neq q_1$则$|(q-q_1)b|\geq b$，而$|-(r-r_1)|&lt;b$，显然矛盾<br>故$q=q_1$ $r=r_1$</p></blockquote><p>**定理：**设a,b,c是三个全不为零的整数，如果存在整数q使得a=qb+c，则(a,b)=(b,c)</p><blockquote><p>证明：设d=(a,b)，则d | a，d | b，由整除的运算定理可知：<br>d | (a-qb)，d | c<br>$\therefore$d是b，c的一个公因数<br>设d’=(b,c)，则d$\leq$d’且d’ | b，d’ | c<br>则d’ | (qb+c)，d’ | a<br>$\therefore$d’是a,b的一个公因数，则d’$\leq$d<br>$\therefore$d=d’<br>即(a,b)=(b,c)</p></blockquote><p>**广义欧几里得除法：**设a,b是两个任意的正整数，记$r_{-2}=a, r_{-1}=b$，则反复运用欧几里得除法有：<br>$r_{-2}=q_0r_{-1}+r_0$<br>$r_{-1}=q_1r_0+r_1$<br>$\dots$<br>$r_{n-1}=q_{n+1}r_n+r_{n+1}$<br>$r_n=q_{n+2}r_{n+1}+0$<br>则$r_{n+1}$是a,b的最大公因数<br>通过上面的定理就很容易得到广义欧几里得除法的证明<br>**贝祖等式：**设a,b是任意的两个正整数，则存在整数s,t使得sa+tb=(a,b)</p><p>贝祖等式的证明同样可以由广义欧几里得除法得到，因为广义欧几里得除法得出了一系列的等式，而$r_{n+1}$就等于(a,b)，那么在上面的等式用$r_{n+1}$依次向上取代便可得到贝祖等式</p><p>**定理：**整数a,b互素的充分必要条件是存在整数s,t使得sa+tb=1</p><blockquote><p>证明：必要性，不难证明，(a,b)=1$\rightarrow$ sa+tb=1<br>充分性<br>设d | a, d | b<br>$\because$sa+tb=1<br>$\therefore$d | (sa+tb) = 1<br>$\therefore$d = 1<br>也就是说只有1能够同时整除a,b，即(a,b)=1</p></blockquote><h3 id="算术基本定理">算术基本定理</h3><p>任意整数n&gt;1都可以表示成素数的乘积，且不考虑乘积顺序的情况下，该表达式是唯一的，即$n=p_1\cdots p_s$，其中$p_1\leq\cdots\leq p_s$<br>**标准分解式：**任意整数n&gt;1可以唯一的表示成：$n=p_1^{a_1}\cdots p_s^{a_s}$，其中$a_i$&gt;0，$p_i&lt;p_j(i&lt;j)$是素数。</p><p>**定理：**设a,b是两个正整数，且都有素数因数分解式<br>$a=p_1^{a_1}\cdots p_s^{a_s}$<br>$b=p_1^{b_1}\cdots p_s^{b_s}$<br>则a,b的最大公因数和最小公倍数为：<br>$(a,b)=p_1^{\varphi_1}\cdots p_s^{\varphi_s}$，其中$\varphi_i=min(a_i,b_i),i=1,\dots,s$<br>$[a,b]=p_1^{\psi_1}\cdots p_s^{\psi_s}$，其中$\psi_i=max(a_i,b_i),i=1,\dots,s$</p><p>推论1：(a,b)[a,b]=a,b</p><blockquote><p>证明.<br>$\because(a,b)=p_1^{\varphi_1}\cdots p_s^{\varphi_s}$<br>$[a,b]=p_1^{\psi_1}\cdots p_s^{\psi_s}$<br>$\therefore (a,b)[a,b]=p_1^{\varphi_1+\psi_1}\cdots p_s^{\varphi_s+\psi_s}$<br>而$\varphi_i=min(a_i,b_i)$，$\psi_i=max(a_i,b_i)$<br>$\because max(a,b)+min(a,b)=a+b$<br>$\therefore \varphi_i+\psi_i=a_i+b_i$<br>$\therefore (a,b)[a,b]=p_1^{a_i+b_i}\cdots p_s^{a_s+b_s}=ab$</p></blockquote><p>推论2：$\frac{a}{(a,b)}$与$\frac{b}{(a,b)}$互素</p><blockquote><p>证明.<br>$\because (a,b)=p_1^{\varphi_1}\cdots p_s^{\varphi_s}(\varphi_i=mid(\alpha_i,\beta_i))$<br>$\therefore \frac{a}{(a,b)}=p_1^{\alpha_1-mid(\alpha_1,\beta_1)}\cdots p_s^{\alpha_s-mid(\alpha_s,\beta_s)}$<br>$\frac{b}{(a,b)}=p_1^{\beta_1-mid(\alpha_1,\beta_1)}\cdots p_s^{\beta_s-mid(\alpha_s,\beta_s)}$<br>$\because mid(a-mid(a,b),b-mid(a,b))=0$<br>$\therefore (\frac{a}{(a,b)},\frac{b}{(a,b)})=p_1^0\cdots p_s^0=1$<br>即$\frac{a}{(a,b)}$与$\frac{b}{(a,b)}$互素</p></blockquote>]]></content>
+    
+    
+    <categories>
+      
+      <category>notes</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>mathematics</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
     <title>使用SendMessage()模拟鼠标操作</title>
     <link href="/2023/08/06/%E4%BD%BF%E7%94%A8SendMessage%E6%A8%A1%E6%8B%9F%E9%BC%A0%E6%A0%87%E6%93%8D%E4%BD%9C/"/>
     <url>/2023/08/06/%E4%BD%BF%E7%94%A8SendMessage%E6%A8%A1%E6%8B%9F%E9%BC%A0%E6%A0%87%E6%93%8D%E4%BD%9C/</url>
